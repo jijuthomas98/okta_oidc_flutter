@@ -1,0 +1,3 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+  package="com.jiju.thomas.okta_oidc_flutter">
+</manifest>
