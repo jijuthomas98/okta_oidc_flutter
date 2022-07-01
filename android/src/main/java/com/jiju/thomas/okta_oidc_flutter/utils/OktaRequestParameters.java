@@ -4,11 +4,11 @@ package com.jiju.thomas.okta_oidc_flutter.utils;
 import java.util.List;
 
 public class OktaRequestParameters {
-    private   String clientId;
+    private  String clientId;
     private  String redirectUri;
     private  String endSessionRedirectUri;
     private  String discoveryUri;
-    private List<String> scopes;
+    private  List<String> scopes;
     private  boolean requireHardwareBackedKeyStore;
 
 
@@ -19,7 +19,6 @@ public class OktaRequestParameters {
             String endSessionRedirectUri,
             String discoveryUri,
             List<String> scopes,
-
             boolean requireHardwareBackedKeyStore
             ){
         this.clientId = clientId;
@@ -27,9 +26,11 @@ public class OktaRequestParameters {
         this.endSessionRedirectUri = endSessionRedirectUri;
         this.discoveryUri = discoveryUri;
         this.scopes = scopes;
-
         this.requireHardwareBackedKeyStore =requireHardwareBackedKeyStore;
     }
+
+
+
 
     public String getClientId() {
         return clientId;

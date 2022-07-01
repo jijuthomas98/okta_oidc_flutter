@@ -1,4 +1,4 @@
-package com.jiju.thomas.okta_oidc_flutter;
+package com.jiju.thomas.okta_oidc_flutter.operations;
 
 import android.content.Context;
 
@@ -14,8 +14,8 @@ import com.okta.oidc.storage.SharedPreferenceStorage;
 
 
 
-public class Operations {
-    public static void createConfig(OktaRequestParameters arg, Context context){
+public class ConfigOktaClient {
+    public static void create(OktaRequestParameters arg, Context context){
         try{
             OIDCConfig config = new OIDCConfig.Builder()
                     .clientId(arg.getClientId())
