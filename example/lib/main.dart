@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:okta_oidc_flutter/Init_okta.dart';
 import 'package:okta_oidc_flutter/okta_oidc_flutter.dart';
+import 'package:okta_oidc_flutter/okta_tokens.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,26 +15,17 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-
   @override
   void initState() {
     super.initState();
-    initPlatformState();
-  }
 
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    try {
-      platformVersion =
-          await OktaOidcFlutter.platformVersion ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-    if (!mounted) return;
-    setState(() {
-      _platformVersion = platformVersion;
-    });
+    OktaOidcFlutter.initOkta(InitOkta(
+        clientId: '0oa5gieiczjZLXlnd5d7',
+        issuer: 'https://dev-24779440.okta.com/oauth2/default',
+        endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
+        redirectUrl: 'com.magnifi.app.staging:/app',
+        scopes: ['openid', 'profile', 'email', 'offline_access'],
+        requireHardwareBackedKeyStore: false));
   }
 
   @override
@@ -46,7 +36,14 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: TextButton(
+            child: const Text('Sign in'),
+            onPressed: () async {
+              OktaTokens o = await OktaOidcFlutter.signInWithCredentials(
+                  'gokul.krishnan@tifin.com', 'tPEGc96\$tT!7z');
+              print(o);
+            },
+          ),
         ),
       ),
     );

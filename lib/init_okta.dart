@@ -1,34 +1,24 @@
 class InitOkta {
-  /// The client id.
   final String clientId;
-
-  /// The URL of where the discovery document can be found.
-  final String discoveryUrl;
-
-  /// The redirect URL when session ended.
+  final String issuer;
   final String endSessionRedirectUri;
-
-  /// The redirect URL.
   final String redirectUrl;
-
-  /// The request scopes.
   final List<String> scopes;
-
   final bool requireHardwareBackedKeyStore;
 
-  InitOkta(
-    this.clientId,
-    this.discoveryUrl,
-    this.endSessionRedirectUri,
-    this.redirectUrl,
-    this.scopes,
-    this.requireHardwareBackedKeyStore,
-  );
+  InitOkta({
+    required this.clientId,
+    required this.issuer,
+    required this.endSessionRedirectUri,
+    required this.redirectUrl,
+    required this.scopes,
+    required this.requireHardwareBackedKeyStore,
+  });
 
   Map<String, dynamic> toMap() {
     return {
       'clientId': clientId,
-      'discoveryUrl': discoveryUrl,
+      'issuer': issuer,
       'endSessionRedirectUri': endSessionRedirectUri,
       'redirectUrl': redirectUrl,
       'scopes': scopes,

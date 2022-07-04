@@ -28,12 +28,15 @@ class OktaOidcFlutter {
     return OktaTokens.fromMap(tokens as Map<String, dynamic>);
   }
 
-  static Future<OktaTokens> signInWithCredentials() async {
+  static Future<OktaTokens> signInWithCredentials(
+      String username, String password) async {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
-    Map<dynamic, dynamic> tokens =
-        await _channel.invokeMethod("SIGN_IN_WITH_CREDENTIAL");
+    Map<dynamic, dynamic> tokens = await _channel.invokeMethod(
+      "SIGN_IN_WITH_CREDENTIAL",
+      {'username': username, 'password': password},
+    );
     return OktaTokens.fromMap(tokens as Map<String, dynamic>);
   }
 
