@@ -60,11 +60,11 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
               result(token);
             });
           break
-          
-      case "LOG_OUT":
+    
+      case "SIGN_OUT":
           logOut( callback: { error in
               if(error != nil) {
-                  let flutterError: FlutterError = FlutterError(code: "Log_Out_Error", message: error?.localizedDescription, details: error.debugDescription);
+                  let flutterError: FlutterError = FlutterError(code: "Sign_Out_Error", message: error?.localizedDescription, details: error.debugDescription);
                 result(flutterError);
                 return
               }
@@ -72,26 +72,6 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
             })
           break
         
-      case "IS_AUTHENTICATED":
-          isAuthenticated( callback: { error in
-              if(error == false) {
-                result(false);
-                return
-              }
-              result(true);
-            })
-          break
-      case "GET_USER":
-              getUser(callback: { user, error in
-                if(error != nil) {
-                  let flutterError: FlutterError = FlutterError(code: "Get_User_Error", message: error?.localizedDescription, details: error.debugDescription);
-                  result(flutterError)
-                  return
-                }
-                result(user);
-              })
-              break;
-
       default:
           result("iOS " + UIDevice.current.systemVersion)
           break
@@ -143,13 +123,14 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
         callback(nil)
        }
     
-    private func signInWithCreds(Username: String!, Password: String!, callback: @escaping ((String?,Error?) -> Void)){
+    private func signInWithCreds(Username: String!, Password: String!, callback: @escaping (([String:String]?,Error?) -> Void)){
         guard let oktaOidc = oktaOidc else {
             return
         }
         do{
             self.authStateManager = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)
             let domainUrl: URL = URL(string: oktaOidc.configuration.issuer)!
+            //Okta Auth SDK - Session Id
            OktaAuthSdk.authenticate(with: domainUrl, username: Username, password: Password,  onStatusChange: { authStatus in
                self.handleStatus(status: authStatus, callback:  callback)
             },
@@ -187,7 +168,7 @@ private func getAccessToken(callback: ((String?) -> (Void))? ) {
         else { callback?(nil) }
       }
     
-    private func handleStatus(status: OktaAuthStatus, callback: @escaping ((String?,Error?) -> Void)) {
+    private func handleStatus(status: OktaAuthStatus, callback: @escaping (([String:String]?,Error?) -> Void)) {
            let currentStatus = status
             
             switch status.statusType {
@@ -202,10 +183,10 @@ private func getAccessToken(callback: ((String?) -> (Void))? ) {
 
 }
     
-  private  func handleSuccessStatus(status: OktaAuthStatus,callback: @escaping ((String?,Error?) -> Void)) {
+    private  func handleSuccessStatus(status: OktaAuthStatus,callback: @escaping (( [String:String]?,Error?) -> Void)) {
         let successStatus: OktaAuthStatusSuccess = status as! OktaAuthStatusSuccess
         let oidcClient = oktaOidc
-      print("token: \(successStatus.sessionToken!)")
+        // Okta OIDC
         oidcClient!.authenticate(withSessionToken: successStatus.sessionToken!,
                                  callback: { [weak self] authStateManager, error in
                                     if let error = error {
@@ -216,8 +197,13 @@ private func getAccessToken(callback: ((String?) -> (Void))? ) {
                                         return
                                  }
             authStateManager!.writeToSecureStorage()
-            print("AccessToken: \(String(describing: authStateManager!.accessToken))")
-            callback(authStateManager!.accessToken, nil)
+//            print("AccessToken: \(String(describing: authStateManager!.accessToken))")
+            print("id: \(String(describing: successStatus.user!.id!))")
+            callback(
+                [
+                "access_token": authStateManager!.accessToken!,
+                "id":successStatus.user!.id!,
+            ], nil)
         })
     }
     
