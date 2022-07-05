@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:okta_oidc_flutter/Init_okta.dart';
+import 'package:okta_oidc_flutter/init_okta.dart';
 import 'package:okta_oidc_flutter/okta_tokens.dart';
 
 class OktaOidcFlutter {
