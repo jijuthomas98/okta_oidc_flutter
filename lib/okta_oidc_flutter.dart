@@ -36,18 +36,6 @@ class OktaOidcFlutter {
     return OktaTokens.parse(tokens);
   }
 
-  static Future<String> registerWithCredentials(
-      String username, String password) async {
-    if (isInitialized == false) {
-      throw Exception("Cannot sign in before initializing Okta SDK");
-    }
-    String accessToken = await _channel.invokeMethod(
-      "SIGN_UP_WITH_CREDENTIAL",
-      {'username': username, 'password': password},
-    );
-    return accessToken;
-  }
-
   static Future<bool> signOut() async {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
