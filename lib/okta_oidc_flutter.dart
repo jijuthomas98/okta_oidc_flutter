@@ -16,8 +16,12 @@ class OktaOidcFlutter {
 
   static Future<void> initOkta(InitOkta request) async {
     isInitialized = false;
-    await _channel.invokeMethod("CREATE_CONFIG", request.toMap());
-    isInitialized = true;
+    try {
+      await _channel.invokeMethod("CREATE_CONFIG", request.toMap());
+      isInitialized = true;
+    } catch (_) {
+      isInitialized = false;
+    }
   }
 
   static Future<OktaTokens> webSignIn() async {
@@ -28,16 +32,16 @@ class OktaOidcFlutter {
     return OktaTokens.fromMap(tokens as Map<String, dynamic>);
   }
 
-  static Future<OktaTokens> signInWithCredentials(
+  static Future<String> signInWithCredentials(
       String username, String password) async {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
-    Map<dynamic, dynamic> tokens = await _channel.invokeMethod(
+    String accessToken = await _channel.invokeMethod(
       "SIGN_IN_WITH_CREDENTIAL",
       {'username': username, 'password': password},
     );
-    return OktaTokens.fromMap(tokens as Map<String, dynamic>);
+    return accessToken;
   }
 
   static Future<bool> signOut() async {
@@ -68,5 +72,26 @@ class OktaOidcFlutter {
     Map<dynamic, dynamic> tokens =
         await _channel.invokeMethod("REFRESH_TOKENS");
     return OktaTokens.fromMap(tokens as Map<String, dynamic>);
+  }
+
+  static Future<void> logOut() async {
+    if (isInitialized == false) {
+      throw Exception("Cannot sign in before initializing Okta SDK");
+    }
+    await _channel.invokeMethod("LOG_OUT");
+  }
+
+  static Future getUser() async {
+    if (isInitialized == false) {
+      throw Exception("Cannot sign in before initializing Okta SDK");
+    }
+    return await _channel.invokeMethod("GET_USER");
+  }
+
+  static Future<String> getAccessToken() async {
+    if (isInitialized == false) {
+      throw Exception("Cannot sign in before initializing Okta SDK");
+    }
+    return await _channel.invokeMethod("GET_ACCESS_TOKEN");
   }
 }
