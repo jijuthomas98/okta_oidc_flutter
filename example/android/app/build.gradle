@@ -40,7 +40,10 @@ android {
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        manifestPlaceholders += [appAuthRedirectScheme: "com.oktaOidcFlutter"]
+        manifestPlaceholders += [
+            hostName:"{https://dev-24779440.okta.com/}",
+            "appAuthRedirectScheme": "com.magnifi.app.staging:/app"
+            ]
     }
 
     buildTypes {

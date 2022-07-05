@@ -1,36 +1,27 @@
 package com.jiju.thomas.okta_oidc_flutter.utils;
 
-
 import java.util.List;
 
 public class OktaRequestParameters {
-    private  String clientId;
-    private  String redirectUri;
-    private  String endSessionRedirectUri;
-    private  String discoveryUri;
-    private  List<String> scopes;
-    private  boolean requireHardwareBackedKeyStore;
+    private String clientId;
+    private String redirectUri;
+    private String endSessionRedirectUri;
+    private String discoveryUri;
+    private List<String> scopes;
 
-
-
-   public OktaRequestParameters(
+    public OktaRequestParameters(
             String clientId,
             String redirectUri,
             String endSessionRedirectUri,
             String discoveryUri,
-            List<String> scopes,
-            boolean requireHardwareBackedKeyStore
-            ){
+            List<String> scopes) {
         this.clientId = clientId;
         this.redirectUri = redirectUri;
         this.endSessionRedirectUri = endSessionRedirectUri;
         this.discoveryUri = discoveryUri;
         this.scopes = scopes;
-        this.requireHardwareBackedKeyStore =requireHardwareBackedKeyStore;
+
     }
-
-
-
 
     public String getClientId() {
         return clientId;
@@ -64,19 +55,12 @@ public class OktaRequestParameters {
         this.discoveryUri = discoveryUri;
     }
 
-    public List<String> getScopes() {
-        return scopes;
+    public String getScopes() {
+        return String.join(" ",scopes);
     }
 
     public void setScopes(List<String> scopes) {
         this.scopes = scopes;
     }
 
-    public boolean isRequireHardwareBackedKeyStore() {
-        return requireHardwareBackedKeyStore;
-    }
-
-    public void setRequireHardwareBackedKeyStore(boolean requireHardwareBackedKeyStore) {
-        this.requireHardwareBackedKeyStore = requireHardwareBackedKeyStore;
-    }
 }

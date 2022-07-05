@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:okta_oidc_flutter/okta_oidc_flutter.dart';
+import 'package:okta_oidc_flutter/okta_oidc_flutter_export.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,26 +15,26 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-
   @override
   void initState() {
     super.initState();
-    initPlatformState();
+    initOktaOidc();
   }
 
-  Future<void> initPlatformState() async {
-    String platformVersion;
+  Future<void> initOktaOidc() async {
     try {
-      platformVersion =
-          await OktaOidcFlutter.platformVersion ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
+      OktaOidcFlutter.initOkta(
+        InitOkta(
+          clientId: '0oa5gieiczjZLXlnd5d7',
+          discoveryUrl: 'https://dev-24779440.okta.com/oauth2/default',
+          endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
+          redirectUrl: 'com.magnifi.app.staging:/app',
+          scopes: ['openid', 'profile', 'email', 'offline_access'],
+        ),
+      );
+    } catch (e) {
+      print(e);
     }
-    if (!mounted) return;
-    setState(() {
-      _platformVersion = platformVersion;
-    });
   }
 
   @override
@@ -46,7 +45,43 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () {
+                  var result = OktaOidcFlutter.signInWithCredentials(
+                    email: 'jiju.thomas@tifin.com',
+                    password: 'Thombra15@',
+                    orgDomain: 'https://dev-24779440.okta.com/',
+                  );
+                  print(result);
+                },
+                child: const Text('Sign In'),
+              ),
+              TextButton(
+                onPressed: () {
+                  var result = OktaOidcFlutter.getAccessToken();
+                  print(result);
+                },
+                child: const Text('Get access token'),
+              ),
+              TextButton(
+                onPressed: () {
+                  var result = OktaOidcFlutter.isAuthenticated();
+                  print(result);
+                },
+                child: const Text('Is Authenticated'),
+              ),
+              TextButton(
+                onPressed: () {
+                  var result = OktaOidcFlutter.signOut();
+                  print(result);
+                },
+                child: const Text('Sign Out'),
+              ),
+            ],
+          ),
         ),
       ),
     );

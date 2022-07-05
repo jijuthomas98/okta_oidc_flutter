@@ -5,6 +5,7 @@ package com.jiju.thomas.okta_oidc_flutter.operations;
 
 
 import android.app.Activity;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -20,6 +21,7 @@ import com.okta.oidc.clients.sessions.SessionClient;
 
 import com.okta.oidc.results.Result;
 import com.okta.oidc.util.AuthorizationException;
+import com.okta.sdk.client.Client;
 
 public class Auth {
     public static Tokens webSignIn(Activity activity){
@@ -31,7 +33,7 @@ public class Auth {
                 return  sessionClient.getTokens();
             }
         }catch (Exception e){
-            throw  new IllegalStateException(Errors.signInFailed);
+            throw  new IllegalStateException(e);
         }
         return null;
     }
@@ -64,51 +66,64 @@ public class Auth {
         return isSignedOut[0];
     }
 
-    public static Tokens signInWithCredentials(String email, String password, String orgDomain){
-        AuthenticationClient authenticationClient;
-        final Tokens[] tokens = new Tokens[1];
-        authenticationClient = AuthenticationClients.builder().setOrgUrl(orgDomain).build();
+    public static String signInWithCredentials(String email, String password, String orgDomain){
+        final String[] accessToken = new String[1];
+        new Thread(new Runnable(){
+            @Override
+            public void run() {
+                try{
+                    AuthenticationClient authenticationClient;
+                    authenticationClient = AuthenticationClients.builder().setOrgUrl(orgDomain).build();
 
-        try {
-            if(authenticationClient == null) return null;
-            authenticationClient.authenticate(email, password.toCharArray(), null, new AuthenticationStateHandlerAdapter() {
-                @Override
-                public void handleUnknown(AuthenticationResponse unknownResponse) {
+                    System.out.println(OktaClient.getInstance().getConfig().getClientId());
 
-                }
-                @Override
-                public void handleLockedOut(AuthenticationResponse lockedOut) {
-                    //Handle response
-                }
+                    try {
+                        if(authenticationClient == null) return ;
+                        System.out.println("SHIT");
+                        authenticationClient.authenticate(email, password.toCharArray(), null, new AuthenticationStateHandlerAdapter() {
 
-                @Override
-                public void handleSuccess(AuthenticationResponse successResponse) {
-                    String sessionToken;
-                    sessionToken = successResponse.getSessionToken();
-                    OktaClient.getInstance().getAuthClient().signIn(sessionToken, null, new RequestCallback<Result, AuthorizationException>() {
-                        @Override
-                        public void onSuccess(@NonNull Result result) {
-                            try {
-                                tokens[0] =  OktaClient.getInstance().getAuthClient().getSessionClient().getTokens();
-                            } catch (AuthorizationException e) {
-                                e.printStackTrace();
+                            @Override
+                            public void handleUnknown(AuthenticationResponse unknownResponse) {
+                                accessToken[0] = unknownResponse.getStatus().name();
                             }
-                        }
+                            @Override
+                            public void handleLockedOut(AuthenticationResponse lockedOut) {
+                                accessToken[0] = "USER_LOCKED_OUT";
+                            }
 
-                        @Override
-                        public void onError(String error, AuthorizationException exception) {
-                            throw new IllegalStateException(error);
-                        }
-                    });
+                            @Override
+                            public void handleSuccess(AuthenticationResponse successResponse) {
+                                String sessionToken;
+                                sessionToken = successResponse.getSessionToken();
+                                OktaClient.getInstance().getAuthClient().signIn(sessionToken, null, new RequestCallback<Result, AuthorizationException>() {
+                                    @Override
+                                    public void onSuccess(@NonNull Result result) {
+                                        try {
+                                          accessToken[0] = OktaClient.getInstance().getAuthClient().getSessionClient().getTokens().getAccessToken();
+                                        } catch (AuthorizationException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+                                    @Override
+                                    public void onError(String s, AuthorizationException e) {
+                                        e.printStackTrace();
+                                    }
+                                });
+                            }
+
+                        });
+
+                    }catch ( Exception e){
+                        e.printStackTrace();
+                    }
+                }catch (Exception ex) {
+                    ex.printStackTrace();
                 }
-
-            });
-            return tokens[0];
-        }catch ( Exception e){
-            throw new IllegalStateException(Errors.signInFailed);
-        }
-
+            }
+        }).start();
+        return accessToken[0];
     }
+
 
     public static boolean isAuthenticated(){
         return OktaClient.getInstance().getAuthClient().getSessionClient().isAuthenticated();

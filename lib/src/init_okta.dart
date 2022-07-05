@@ -14,25 +14,25 @@ class InitOkta {
   /// The request scopes.
   final List<String> scopes;
 
-  final bool requireHardwareBackedKeyStore;
+  final bool? requireHardwareBackedKeyStore;
 
-  InitOkta(
-    this.clientId,
-    this.discoveryUrl,
-    this.endSessionRedirectUri,
-    this.redirectUrl,
-    this.scopes,
-    this.requireHardwareBackedKeyStore,
-  );
+  InitOkta({
+    required this.clientId,
+    required this.discoveryUrl,
+    required this.endSessionRedirectUri,
+    required this.redirectUrl,
+    required this.scopes,
+    this.requireHardwareBackedKeyStore = false,
+  });
 
   Map<String, dynamic> toMap() {
     return {
       'clientId': clientId,
-      'discoveryUrl': discoveryUrl,
+      'discoveryUri': discoveryUrl,
       'endSessionRedirectUri': endSessionRedirectUri,
-      'redirectUrl': redirectUrl,
-      'scopes': scopes,
-      'requireHardwareBackedKeyStore': requireHardwareBackedKeyStore,
+      'redirectUri': redirectUrl,
+      'scopes': scopes.join(','),
+      'requireHardwareBackedKeyStore': requireHardwareBackedKeyStore
     };
   }
 }

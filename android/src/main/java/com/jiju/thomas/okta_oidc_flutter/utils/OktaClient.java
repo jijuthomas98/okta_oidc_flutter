@@ -6,8 +6,8 @@ import com.okta.oidc.clients.web.WebAuthClient;
 
 public class OktaClient {
     private final OIDCConfig config;
-    private final  WebAuthClient webAuthClient;
-    private final AuthClient authClient;
+    private WebAuthClient webAuthClient = null;
+    private AuthClient authClient = null;
     private static OktaClient oktaInstance = null;
 
     private OktaClient(OIDCConfig config, WebAuthClient webAuthClient,AuthClient authClient){
@@ -36,12 +36,12 @@ public class OktaClient {
     }
 
     public WebAuthClient getWebAuthClient() {
-        if(oktaInstance == null) throw new IllegalStateException(Errors.notConfigured);
+        if(oktaInstance == null && webAuthClient == null) throw new IllegalStateException(Errors.notConfigured);
         return this.webAuthClient;
     }
 
     public AuthClient getAuthClient() {
-        if(oktaInstance == null) throw new IllegalStateException(Errors.notConfigured);
+        if(oktaInstance == null && authClient == null) throw new IllegalStateException(Errors.notConfigured);
         return this.authClient;
     }
 
