@@ -23,23 +23,23 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
                           return;
           }
           let clientId: String = oktaInfo["clientId"] as! String;
-          let issuer: String? = oktaInfo["issuer"] as? String;
+          let issuer: String = oktaInfo["issuer"] as! String;
           let endSessionRedirectUri: String? = oktaInfo["endSessionRedirectUri"] as? String;
           let redirectUrl: String = oktaInfo["redirectUrl"] as! String;
-          let idp: String? = oktaInfo["idp"] as? String ?? "idp";
+          let idp: String? = oktaInfo["idp"] as? String;
           let scopeArray: [String] = oktaInfo["scopes"] as! [String];
           let scopes = scopeArray.joined(separator: " ");
           let oktaConfigMap : [String:String] = (idp != nil) ? [
             "clientId": clientId,
             "logoutRedirectUri": endSessionRedirectUri!,
-            "issuer": issuer!,
+            "issuer": issuer,
             "idp": idp!,
             "scopes": scopes,
             "redirectUri": redirectUrl,
           ] :  [
             "clientId": clientId,
-            "issuer": issuer!,
-            "logoutRedirectU'ri": endSessionRedirectUri!,
+            "issuer": issuer,
+            "logoutRedirectUri": endSessionRedirectUri!,
             "scopes": scopes,
             "redirectUri": redirectUrl,
           ] ;
@@ -236,7 +236,7 @@ private func getAccessToken(callback: ((String?) -> (Void))? ) {
                                         print("error")
                                         self?.authStateManager = nil
                                         callback(nil, error)
-                                        self?.handleError(error: error as! OktaError)
+//                                        self?.handleError(error: error as! OktaOidcError)
                                         return
                                  }
             authStateManager!.writeToSecureStorage()
@@ -251,12 +251,12 @@ private func getAccessToken(callback: ((String?) -> (Void))? ) {
     }
     
     
-    private func handleError(error: OktaError) {
-        switch error {
-            case .serverRespondedWithError(let errorResponse):
-                print("Error: \(errorResponse.errorSummary ?? "server error")")
-            default:
-                print("Error: \(error.description)")
-        }
-    }
+//    private func handleError(error: OktaOidcError) {
+//        switch error {
+//            case .serverRespondedWithError(let errorResponse):
+//                print("Error: \(errorResponse.errorSummary ?? "server error")")
+//            default:
+//                print("Error: \(error.description)")
+//        }
+//    }
 }
