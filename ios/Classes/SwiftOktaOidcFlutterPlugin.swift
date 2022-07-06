@@ -22,20 +22,27 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
                           result(-1);
                           return;
           }
-          let clientId: String? = oktaInfo["clientId"] as? String;
+          let clientId: String = oktaInfo["clientId"] as! String;
           let issuer: String? = oktaInfo["issuer"] as? String;
           let endSessionRedirectUri: String? = oktaInfo["endSessionRedirectUri"] as? String;
-          let redirectUrl: String? = oktaInfo["redirectUrl"] as? String;
-          let scopeArray: [String]? = oktaInfo["scopes"] as? [String];
-          let scopes = scopeArray?.joined(separator: " ");
-          let oktaConfigMap: [String: String] = [
-                         "clientId": clientId!,
-                         "issuer": issuer!,
-                         "logoutRedirectUri": endSessionRedirectUri!,
-                         "scopes": scopes!,
-                         "redirectUri": redirectUrl!,
-                       ] as [String: String];
-          
+          let redirectUrl: String = oktaInfo["redirectUrl"] as! String;
+          let idp: String? = oktaInfo["idp"] as? String ?? "idp";
+          let scopeArray: [String] = oktaInfo["scopes"] as! [String];
+          let scopes = scopeArray.joined(separator: " ");
+          let oktaConfigMap : [String:String] = (idp != nil) ? [
+            "clientId": clientId,
+            "logoutRedirectUri": endSessionRedirectUri!,
+            "issuer": issuer!,
+            "idp": idp!,
+            "scopes": scopes,
+            "redirectUri": redirectUrl,
+          ] :  [
+            "clientId": clientId,
+            "issuer": issuer!,
+            "logoutRedirectU'ri": endSessionRedirectUri!,
+            "scopes": scopes,
+            "redirectUri": redirectUrl,
+          ] ;
          return initOkta(configuration: oktaConfigMap, callback: { error in
              if(error != nil) {
                result(error);
@@ -43,6 +50,7 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
              }
              result(true);
            });
+          
       case "SIGN_IN_WITH_CREDENTIAL":
           guard let creds: Dictionary = call.arguments as? [String: String] else {
                           result(-1);
@@ -54,6 +62,16 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
           signInWithCreds(Username: username, Password: password,callback: {token,error  in
               if(error != nil) {
                   let flutterError: FlutterError = FlutterError(code: "Sign_In_Error", message: error?.localizedDescription, details: error.debugDescription);
+                result(flutterError);
+                return
+              }
+              result(token);
+            });
+          break
+      case "WEB_SIGN_IN":
+          signInWithBrowser(callback: {token,error  in
+              if(error != nil) {
+                  let flutterError: FlutterError = FlutterError(code: "Web_In_Error", message: error?.localizedDescription, details: error.debugDescription);
                 result(flutterError);
                 return
               }
@@ -107,6 +125,7 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
 
         
     }
+    
     private func initOkta(configuration: [String:String], callback: ((Error?) -> (Void))) {
            do {
                 let oktaConfiguration: OktaOidcConfig = try OktaOidcConfig(with: configuration);
@@ -143,6 +162,30 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
         }
     }
     
+    private func signInWithBrowser(callback: @escaping (([String:String]?,Error?) -> Void)) {
+        let viewController: UIViewController =
+                    (UIApplication.shared.delegate?.window??.rootViewController)!;
+        guard let oktaOidc = oktaOidc else {
+            return
+        }
+        self.authStateManager = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)
+        oktaOidc.signInWithBrowser(from: viewController, callback: { [weak self] authStateManager, error in
+          if let error = error {
+            self?.authStateManager = nil
+            print("Signin Error: \(error)");
+              callback(nil, error)
+            return
+          }
+            print("token:  \(String(describing: authStateManager!.accessToken!))")
+            callback(
+                [
+                "access_token": authStateManager!.accessToken!
+            ], nil)
+
+        })
+      }
+
+
   private  func getUser(callback: @escaping ((String?, Error?)-> (Void))) {
       print("INside")
         authStateManager?.getUser { response, error in
