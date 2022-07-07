@@ -8,19 +8,22 @@ public class OktaRequestParameters {
     private String endSessionRedirectUri;
     private String discoveryUri;
     private List<String> scopes;
+    private Boolean requireHardwareBackedKeyStore;
 
     public OktaRequestParameters(
             String clientId,
             String redirectUri,
             String endSessionRedirectUri,
             String discoveryUri,
-            List<String> scopes) {
+            List<String> scopes,
+            Boolean requireHardwareBackedKeyStore
+    ) {
         this.clientId = clientId;
         this.redirectUri = redirectUri;
         this.endSessionRedirectUri = endSessionRedirectUri;
         this.discoveryUri = discoveryUri;
         this.scopes = scopes;
-
+        this.requireHardwareBackedKeyStore = requireHardwareBackedKeyStore;
     }
 
     public String getClientId() {
@@ -61,6 +64,10 @@ public class OktaRequestParameters {
 
     public void setScopes(List<String> scopes) {
         this.scopes = scopes;
+    }
+
+    public Boolean getRequireHardwareBackedKeyStore() {
+        return requireHardwareBackedKeyStore;
     }
 
 }

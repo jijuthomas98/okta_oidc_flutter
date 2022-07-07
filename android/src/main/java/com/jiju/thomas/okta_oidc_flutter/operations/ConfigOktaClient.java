@@ -18,8 +18,6 @@ import java.util.concurrent.Executors;
 public class ConfigOktaClient {
     public static void create(OktaRequestParameters arg, Context context){
         try{
-
-            System.out.println(arg.getScopes());
             OIDCConfig config = new OIDCConfig.Builder()
                     .clientId(arg.getClientId())
                     .redirectUri(arg.getRedirectUri())
@@ -31,7 +29,7 @@ public class ConfigOktaClient {
             WebAuthClient webAuthClient = new Okta.WebAuthBuilder()
                     .withConfig(config)
                     .withContext(context)
-                    .setRequireHardwareBackedKeyStore(false)
+                    .setRequireHardwareBackedKeyStore(arg.getRequireHardwareBackedKeyStore())
                     .withStorage(new SharedPreferenceStorage(context))
                     .withCallbackExecutor(Executors.newSingleThreadExecutor())
                     .create();
@@ -39,7 +37,7 @@ public class ConfigOktaClient {
             AuthClient authClient = new Okta.AuthBuilder()
                     .withConfig(config)
                     .withContext(context)
-                    .setRequireHardwareBackedKeyStore(false)
+                    .setRequireHardwareBackedKeyStore(arg.getRequireHardwareBackedKeyStore())
                     .withStorage(new SharedPreferenceStorage(context))
                     .withCallbackExecutor(Executors.newSingleThreadExecutor())
                     .create();

@@ -1,10 +1,10 @@
 class OktaTokens {
-  final String id;
-  final String accessToken;
+  final String? id;
+  final String? accessToken;
 
   OktaTokens({
-    required this.id,
-    required this.accessToken,
+    this.id,
+    this.accessToken,
   });
 
   factory OktaTokens.parse(map) {

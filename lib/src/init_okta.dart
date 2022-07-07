@@ -32,7 +32,10 @@ class InitOkta {
       'endSessionRedirectUri': endSessionRedirectUri,
       'redirectUri': redirectUrl,
       'scopes': scopes.join(','),
-      'requireHardwareBackedKeyStore': requireHardwareBackedKeyStore
+      'requireHardwareBackedKeyStore': (requireHardwareBackedKeyStore != null &&
+              requireHardwareBackedKeyStore!)
+          ? 'true'
+          : 'false'
     };
   }
 }

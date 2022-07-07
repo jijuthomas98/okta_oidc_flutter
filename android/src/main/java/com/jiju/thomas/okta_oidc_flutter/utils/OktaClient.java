@@ -44,6 +44,4 @@ public class OktaClient {
         if(oktaInstance == null && authClient == null) throw new IllegalStateException(Errors.notConfigured);
         return this.authClient;
     }
-
-
 }

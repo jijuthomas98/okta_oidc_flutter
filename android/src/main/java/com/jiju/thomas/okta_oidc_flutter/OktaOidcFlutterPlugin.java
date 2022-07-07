@@ -47,9 +47,7 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
 
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-
-    
-
+      // Create Okta Config
     if(call.method.equals(AvailableMethods.CREATE_CONFIG)){
       try{
           ArrayList arguments = (ArrayList) call.arguments;
@@ -59,41 +57,41 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
           final String endSessionRedirectUri = argMap.get("endSessionRedirectUri");
           final String discoveryUri = argMap.get("discoveryUri");
           final List<String> scopes = new ArrayList<String>(Arrays.asList(argMap.get("scopes").split(",")));
+          final Boolean requireHardwareBackedKeyStore =  Boolean.parseBoolean(argMap.get("requireHardwareBackedKeyStore"));
 
         OktaRequestParameters oktaRequestParameters = new OktaRequestParameters(
             clientId,
             redirectUri,
             endSessionRedirectUri,
             discoveryUri,
-            scopes);
+            scopes, requireHardwareBackedKeyStore);
         ConfigOktaClient.create(oktaRequestParameters, context);
         result.success(true);
+
       }catch (Exception e){
         result.error("1",e.getMessage(),e.getStackTrace());
       }
-
-    }else if(call.method.equals(AvailableMethods.SIGN_IN)){
-      Tokens tokens;
-      try {
-
-        tokens = Auth.webSignIn(mainActivity);
-      //  result.success(mapper.writeValueAsString(tokens));
-      } catch (Exception e){
-        result.error("1",e.getMessage(),e.getStackTrace());
-      }
-    }else if(call.method.equals(AvailableMethods.SIGN_IN_WITH_CREDENTIAL)){
+    }
+    // Sign in with Credentials
+     else if(call.method.equals(AvailableMethods.SIGN_IN_WITH_CREDENTIAL)){
         Tokens tokens;
+        ObjectMapper mapper = new ObjectMapper();
+
+
         ArrayList arguments = (ArrayList) call.arguments;
         HashMap<String, String> argMap = new HashMap<String,String>((Map< String,String>) arguments.get(0));
         final String email = argMap.get("email");
         final String password = argMap.get("password");
         final String orgDomain = argMap.get("orgDomain");
         try {
-         Auth.signInWithCredentials(email, password, orgDomain);
-         // result.success(mapper.writeValueAsString(tokens));
+            Auth.signInWithCredentials(email, password, orgDomain);
+         //result.success(authData);
         } catch (Exception e) {
           e.printStackTrace();
         }
+    }else if(call.method.equals(AvailableMethods.SIGN_OUT)){
+         boolean isSignedOut = Auth.signOut(mainActivity);
+         result.success(isSignedOut);
     }
     else {
       result.notImplemented();

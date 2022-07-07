@@ -49,34 +49,50 @@ class _MyAppState extends State<MyApp> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextButton(
-                onPressed: () {
-                  var result = OktaOidcFlutter.signInWithCredentials(
+                onPressed: () async {
+                  OktaTokens tokens =
+                      await OktaOidcFlutter.signInWithCredentials(
                     email: 'jiju.thomas@tifin.com',
                     password: 'Thombra15@',
                     orgDomain: 'https://dev-24779440.okta.com/',
                   );
-                  print(result);
+                  if (tokens.accessToken != null) {
+                    print(tokens.accessToken);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Signed In')));
+                  }
                 },
                 child: const Text('Sign In'),
               ),
               TextButton(
-                onPressed: () {
-                  var result = OktaOidcFlutter.getAccessToken();
-                  print(result);
+                onPressed: () async {
+                  OktaTokens tokens = await OktaOidcFlutter.getAccessToken();
+                  if (tokens.accessToken != null) {
+                    print(tokens.accessToken);
+                  }
                 },
                 child: const Text('Get access token'),
               ),
               TextButton(
-                onPressed: () {
-                  var result = OktaOidcFlutter.isAuthenticated();
-                  print(result);
+                onPressed: () async {
+                  bool isAuthenticated =
+                      await OktaOidcFlutter.isAuthenticated();
+                  if (isAuthenticated) {
+                    print(isAuthenticated);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('User Authenticated')));
+                  }
                 },
                 child: const Text('Is Authenticated'),
               ),
               TextButton(
-                onPressed: () {
-                  var result = OktaOidcFlutter.signOut();
-                  print(result);
+                onPressed: () async {
+                  bool result = await OktaOidcFlutter.signOut();
+                  if (result) {
+                    print(result);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Signed out')));
+                  }
                 },
                 child: const Text('Sign Out'),
               ),

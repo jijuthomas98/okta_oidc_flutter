@@ -12,13 +12,8 @@ class OktaOidcFlutter {
   /// Initialize Okta OIDC
   static Future<void> initOkta(InitOkta request) async {
     isInitialized = false;
-    try {
-      await _channel.invokeMethod("CREATE_CONFIG", [request.toMap()]);
-      isInitialized = true;
-    } catch (e) {
-      isInitialized = false;
-      throw Exception(e);
-    }
+    isInitialized =
+        await _channel.invokeMethod("CREATE_CONFIG", [request.toMap()]);
   }
 
   /// Sign in with Credentials (use email and password),
@@ -31,18 +26,15 @@ class OktaOidcFlutter {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
-    try {
-      var tokens = await _channel.invokeMethod("SIGN_IN_WITH_CREDENTIAL", [
-        {
-          "email": email,
-          "password": password,
-          "orgDomain": orgDomain,
-        }
-      ]);
-      return OktaTokens.parse(tokens);
-    } catch (e) {
-      throw Exception(e);
-    }
+    var tokens = await _channel.invokeMethod("SIGN_IN_WITH_CREDENTIAL", [
+      {
+        "email": email,
+        "password": password,
+        "orgDomain": orgDomain,
+      }
+    ]);
+    print(tokens);
+    return OktaTokens.parse(tokens);
   }
 
   /// Sign out by revoking okta tokens
@@ -50,11 +42,11 @@ class OktaOidcFlutter {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
-    try {
-      return await _channel.invokeMethod("SIGN_OUT") as bool;
-    } catch (e) {
-      throw Exception(e);
-    }
+
+    bool isSignedOut = false;
+    isSignedOut = await _channel.invokeMethod("SIGN_OUT") as bool;
+    print('isSignedOut                  $isSignedOut');
+    return isSignedOut;
   }
 
   /// Check if app is already Authenticated
