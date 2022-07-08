@@ -48,136 +48,59 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
       // Create Okta Config
-    if(call.method.equals(AvailableMethods.CREATE_CONFIG)){
-      try{
-          ArrayList arguments = (ArrayList) call.arguments;
-          HashMap<String, String> argMap = new HashMap<String,String>((Map< String,String>) arguments.get(0));
-          final String clientId = argMap.get("clientId");
-          final String redirectUri = argMap.get("redirectUri");
-          final String endSessionRedirectUri = argMap.get("endSessionRedirectUri");
-          final String discoveryUri = argMap.get("discoveryUri");
-          final List<String> scopes = new ArrayList<String>(Arrays.asList(argMap.get("scopes").split(",")));
-          final Boolean requireHardwareBackedKeyStore =  Boolean.parseBoolean(argMap.get("requireHardwareBackedKeyStore"));
+      switch (call.method) {
+          case AvailableMethods.CREATE_CONFIG:
+              try {
+                  ArrayList arguments = (ArrayList) call.arguments;
+                  HashMap<String, String> argMap = new HashMap<String, String>((Map<String, String>) arguments.get(0));
+                  final String clientId = argMap.get("clientId");
+                  final String redirectUri = argMap.get("redirectUri");
+                  final String endSessionRedirectUri = argMap.get("endSessionRedirectUri");
+                  final String discoveryUri = argMap.get("discoveryUri");
+                  final List<String> scopes = new ArrayList<String>(Arrays.asList(argMap.get("scopes").split(",")));
+                  final Boolean requireHardwareBackedKeyStore = Boolean.parseBoolean(argMap.get("requireHardwareBackedKeyStore"));
 
-        OktaRequestParameters oktaRequestParameters = new OktaRequestParameters(
-            clientId,
-            redirectUri,
-            endSessionRedirectUri,
-            discoveryUri,
-            scopes, requireHardwareBackedKeyStore);
-        ConfigOktaClient.create(oktaRequestParameters, context);
-        result.success(true);
+                  OktaRequestParameters oktaRequestParameters = new OktaRequestParameters(
+                          clientId,
+                          redirectUri,
+                          endSessionRedirectUri,
+                          discoveryUri,
+                          scopes, requireHardwareBackedKeyStore);
+                  ConfigOktaClient.create(oktaRequestParameters, context);
+                  result.success(true);
 
-      }catch (Exception e){
-        result.error("1",e.getMessage(),e.getStackTrace());
+              } catch (Exception e) {
+                  result.error("1", e.getMessage(), e.getStackTrace());
+              }
+              break;
+          // Sign in with Credentials
+          case AvailableMethods.SIGN_IN_WITH_CREDENTIAL:
+              Tokens tokens;
+              ObjectMapper mapper = new ObjectMapper();
+              ArrayList arguments = (ArrayList) call.arguments;
+              HashMap<String, String> argMap = new HashMap<String, String>((Map<String, String>) arguments.get(0));
+              final String email = argMap.get("email");
+              final String password = argMap.get("password");
+              final String orgDomain = argMap.get("orgDomain");
+              try {
+                  HashMap<String, String> authData = Auth.signInWithCredentials(email, password, orgDomain);
+                  result.success(authData);
+              } catch (Exception e) {
+                  e.printStackTrace();
+              }
+              break;
+          case AvailableMethods.SIGN_OUT:
+              boolean isSignedOut = Auth.signOut(mainActivity);
+              result.success(isSignedOut);
+              break;
+          case AvailableMethods.IS_AUTHENTICATED:
+              boolean isAuthenticated = Auth.isAuthenticated();
+              result.success(isAuthenticated);
+              break;
+          default:
+              result.notImplemented();
+              break;
       }
-    }
-    // Sign in with Credentials
-     else if(call.method.equals(AvailableMethods.SIGN_IN_WITH_CREDENTIAL)){
-        Tokens tokens;
-        ObjectMapper mapper = new ObjectMapper();
-
-
-        ArrayList arguments = (ArrayList) call.arguments;
-        HashMap<String, String> argMap = new HashMap<String,String>((Map< String,String>) arguments.get(0));
-        final String email = argMap.get("email");
-        final String password = argMap.get("password");
-        final String orgDomain = argMap.get("orgDomain");
-        try {
-            Auth.signInWithCredentials(email, password, orgDomain);
-         //result.success(authData);
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-    }else if(call.method.equals(AvailableMethods.SIGN_OUT)){
-         boolean isSignedOut = Auth.signOut(mainActivity);
-         result.success(isSignedOut);
-    }
-    else {
-      result.notImplemented();
-    }
-
-//    switch (call.method) {
-//      case AvailableMethods.CREATE_CONFIG:
-//        System.out.println("+++++++++++++");
-//        System.out.println(call.method);
-////        final String clientId = call.argument("clientId");
-////        final String redirectUri = call.argument("redirectUri");
-////        final String endSessionRedirectUri = call.argument("endSessionRedirectUri");
-////        final String discoveryUri = call.argument("discoveryUri");
-////        final List<String> scopes = call.argument("scopes");
-////        final boolean requireHardwareBackedKeyStore = Boolean.FALSE
-////            .equals(call.argument("requireHardwareBackedKeyStore"));
-////        OktaRequestParameters oktaRequestParameters = new OktaRequestParameters(
-////            clientId,
-////            redirectUri,
-////            endSessionRedirectUri,
-////            discoveryUri,
-////            scopes,
-////            requireHardwareBackedKeyStore);
-////        ConfigOktaClient.create(oktaRequestParameters, context);
-//        try{
-//
-//        }catch (Exception e){
-//          System.out.println("error");
-//        }finally {
-//          result.success(true);
-//        }
-//
-//        break;
-//
-//      case AvailableMethods.SIGN_IN:
-//        tokens = Auth.webSignIn(mainActivity);
-//        try {
-//          result.success(mapper.writeValueAsString(tokens));
-//        } catch (JsonProcessingException e) {
-//          e.printStackTrace();
-//        }
-//        break;
-//
-//      case AvailableMethods.SIGN_IN_WITH_CREDENTIAL:
-//        System.out.println("----------");
-//        System.out.println(call.method);
-////        final String email = call.argument("email");
-////        final String password = call.argument("password");
-////        final String orgDomain = call.argument("orgDomain");
-////        try {
-////        tokens = Auth.signInWithCredentials(email, password, orgDomain);
-////          result.success(mapper.writeValueAsString(tokens));
-////        } catch (JsonProcessingException e) {
-////          e.printStackTrace();
-////        }
-//        break;
-//
-//      case AvailableMethods.SIGN_OUT:
-//        boolean isSignedOut = Auth.signOut(mainActivity);
-//        result.success(isSignedOut);
-//        break;
-//
-//      case AvailableMethods.IS_AUTHENTICATED:
-//        boolean isAuthenticated = Auth.isAuthenticated();
-//        result.success(isAuthenticated);
-//        break;
-//
-//      case AvailableMethods.CLEAR_TOKENS:
-//        boolean isTokenCleared = Auth.clearTokens();
-//        result.success(isTokenCleared);
-//        break;
-//
-//      case AvailableMethods.REFRESH_TOKENS:
-//        tokens = Auth.refreshTokens();
-//        try {
-//          result.success(mapper.writeValueAsString(tokens));
-//        } catch (JsonProcessingException e) {
-//          e.printStackTrace();
-//        }
-//        break;
-//
-//      default:
-//        result.success(Errors.genericError);
-//        break;
-//    }
-
   }
 
   @Override

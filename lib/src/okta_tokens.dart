@@ -9,8 +9,8 @@ class OktaTokens {
 
   factory OktaTokens.parse(map) {
     return OktaTokens(
-      id: map['id'],
-      accessToken: map['access_token'],
+      id: map['userId'] as String,
+      accessToken: map['accessToken'] as String,
     );
   }
 }

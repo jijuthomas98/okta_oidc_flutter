@@ -5,12 +5,7 @@ package com.jiju.thomas.okta_oidc_flutter.operations;
 
 
 import android.app.Activity;
-import android.content.Context;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.SystemClock;
 
-import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient;
@@ -24,32 +19,39 @@ import com.okta.oidc.net.response.UserInfo;
 import com.okta.oidc.results.Result;
 import com.okta.oidc.util.AuthorizationException;
 
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 
 public class Auth {
-
-    private static String kAccessToke;
-
-    public static void signInWithCredentials(String email, String password, String orgDomain){
+    public static HashMap<String,String> signInWithCredentials(String email, String password, String orgDomain){
         AuthAndSignIn authAndSignIn = new AuthAndSignIn(email,password,orgDomain);
-        ExecutorService executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
-        Future<String> result = executor.submit(authAndSignIn);
+
+        ExecutorService taskExecutor = Executors.newSingleThreadExecutor();
+        List<Callable<Void>> tasks = Arrays.asList(authAndSignIn);
+        try{
+            taskExecutor.invokeAll(tasks);
+            awaitTerminationAfterShutdown(taskExecutor);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return  authAndSignIn.getAuthData();
     }
 
 
-    private static class AuthAndSignIn implements Callable<String>{
+    private static class AuthAndSignIn implements Callable<Void>{
         private  String accessToken;
         private  String userId;
 
+
         String email;
         String password;
+        String orgDomain;
 
         public AuthAndSignIn(String email, String password, String orgDomain) {
             this.email = email;
@@ -57,9 +59,12 @@ public class Auth {
             this.orgDomain = orgDomain;
         }
 
-        String orgDomain;
+        public synchronized void notifyToThread() {
+            notify();
+        }
+
         @Override
-        public String call() {
+        public synchronized Void call() {
             try{
                 AuthenticationClient authenticationClient;
                 authenticationClient = AuthenticationClients.builder().setOrgUrl(orgDomain).build();
@@ -85,7 +90,7 @@ public class Auth {
                                             @Override
                                             public void onSuccess(@NonNull UserInfo result) {
                                                 userId = result.get("sub").toString();
-                                                System.out.println(userId);
+                                                notifyToThread();
                                             }
                                             @Override
                                             public void onError(String error, AuthorizationException e) {
@@ -106,20 +111,32 @@ public class Auth {
                 }catch ( Exception e){
                     e.printStackTrace();
                 }
+                wait();
+
             }catch (Exception ex) {
                 ex.printStackTrace();
             }
-            if(accessToken != null){
-                return accessToken;
-            }else return "EMPTY";
+             return null;
         }
 
-//        public HashMap<String,String> getAuthData(){
-//            HashMap<String,String> authData = new HashMap<String,String>();
-//            authData.put("accessToken",accessToken);
-//            authData.put("userId",userId);
-//            return  authData;
-//        }
+        public HashMap<String,String> getAuthData(){
+            HashMap<String,String> authData = new HashMap<String,String>();
+            authData.put("accessToken",accessToken);
+            authData.put("userId",userId);
+            return  authData;
+        }
+    }
+
+    private static void awaitTerminationAfterShutdown(ExecutorService threadPool) {
+        threadPool.shutdown();
+        try {
+            if (!threadPool.awaitTermination(60, TimeUnit.SECONDS)) {
+                threadPool.shutdownNow();
+            }
+        } catch (InterruptedException ex) {
+            threadPool.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
 

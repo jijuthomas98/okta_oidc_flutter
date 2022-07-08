@@ -26,14 +26,14 @@ class OktaOidcFlutter {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
-    var tokens = await _channel.invokeMethod("SIGN_IN_WITH_CREDENTIAL", [
+    var tokens = await _channel
+        .invokeMethod<Map<dynamic, dynamic>>("SIGN_IN_WITH_CREDENTIAL", [
       {
         "email": email,
         "password": password,
         "orgDomain": orgDomain,
       }
     ]);
-    print(tokens);
     return OktaTokens.parse(tokens);
   }
 
@@ -45,7 +45,7 @@ class OktaOidcFlutter {
 
     bool isSignedOut = false;
     isSignedOut = await _channel.invokeMethod("SIGN_OUT") as bool;
-    print('isSignedOut                  $isSignedOut');
+
     return isSignedOut;
   }
 
@@ -56,23 +56,6 @@ class OktaOidcFlutter {
     }
     try {
       return await _channel.invokeMethod("IS_AUTHENTICATED") as bool;
-    } catch (e) {
-      throw Exception(e);
-    }
-  }
-
-  /// this method will return access token when user is authenticated else will throw exception
-  static Future<OktaTokens> getAccessToken() async {
-    if (isInitialized == false) {
-      throw Exception("Cannot sign in before initializing Okta SDK");
-    }
-    try {
-      if (await isAuthenticated()) {
-        var tokens = await _channel.invokeMethod("REFRESH_TOKENS");
-        return OktaTokens.parse(tokens);
-      } else {
-        throw Exception("Cannot call getAccessToken before authenticating");
-      }
     } catch (e) {
       throw Exception(e);
     }

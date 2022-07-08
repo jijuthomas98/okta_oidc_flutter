@@ -5,5 +5,4 @@ public class AvailableMethods{
     public static final String SIGN_IN_WITH_CREDENTIAL = "SIGN_IN_WITH_CREDENTIAL";
     public static final String SIGN_OUT = "SIGN_OUT";
     public static final String IS_AUTHENTICATED = "IS_AUTHENTICATED";
-    public static final String GET_ACCESS_TOKEN = "GET_ACCESS_TOKEN";
 }

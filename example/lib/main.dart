@@ -56,22 +56,9 @@ class _MyAppState extends State<MyApp> {
                     password: 'Thombra15@',
                     orgDomain: 'https://dev-24779440.okta.com/',
                   );
-                  if (tokens.accessToken != null) {
-                    print(tokens.accessToken);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Signed In')));
-                  }
+                  print(tokens.accessToken);
                 },
                 child: const Text('Sign In'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  OktaTokens tokens = await OktaOidcFlutter.getAccessToken();
-                  if (tokens.accessToken != null) {
-                    print(tokens.accessToken);
-                  }
-                },
-                child: const Text('Get access token'),
               ),
               TextButton(
                 onPressed: () async {
