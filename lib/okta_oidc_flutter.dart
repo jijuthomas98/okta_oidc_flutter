@@ -57,4 +57,13 @@ class OktaOidcFlutter {
     }
     return await _channel.invokeMethod("IS_AUTHENTICATED") as bool;
   }
+
+  static Future<Map>? forgotPassword(String userName) async {
+    if (isInitialized == false) {
+      throw Exception("Cannot sign in before initializing Okta SDK");
+    }
+    return await _channel.invokeMethod("FORGOT_PASSWORD", {
+      "username": userName,
+    });
+  }
 }
