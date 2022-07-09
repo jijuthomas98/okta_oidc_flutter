@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:okta_oidc_flutter/init_okta.dart';
@@ -29,10 +30,20 @@ class OktaOidcFlutter {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
-    var tokens = await _channel.invokeMethod(
-      "SIGN_IN_WITH_CREDENTIAL",
-      {'username': username, 'password': password},
-    );
+    Map tokens;
+    if (Platform.isAndroid) {
+      tokens = await _channel.invokeMethod(
+        "SIGN_IN_WITH_CREDENTIAL",
+        [
+          {'username': username, 'password': password},
+        ],
+      );
+    } else {
+      tokens = await _channel.invokeMethod(
+        "SIGN_IN_WITH_CREDENTIAL",
+        {'username': username, 'password': password},
+      );
+    }
     return OktaTokens.parse(tokens);
   }
 
