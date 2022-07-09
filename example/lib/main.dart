@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:okta_oidc_flutter/Init_okta.dart';
 import 'package:okta_oidc_flutter/okta_oidc_flutter.dart';
-import 'package:okta_oidc_flutter/okta_tokens.dart';
 
 void main() {
   runApp(const MyApp());
