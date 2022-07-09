@@ -26,20 +26,40 @@ class AvailableMethods{
      
      
       func logOut( callback: @escaping ((Error?) -> (Void))){
-         do {
-             try self.authStateManager?.removeFromSecureStorage()
-             self.authStateManager?.revoke(authStateManager?.refreshToken) { response, error in
-                 if error != nil {
-                     print(error!)
-                     callback(error)
-                     return
-                 }
-             }
-         }catch let error {
-             print("Logging out failed \(error)");
-             callback(error)
-             return
-           }
+          let viewController: UIViewController =
+                         (UIApplication.shared.delegate?.window??.rootViewController)!;
+          guard let oktaOidc = oktaOidc else {
+              return
+          }
+          guard let authStateManager = authStateManager else {
+              return
+          }
+          do {
+              try authStateManager.removeFromSecureStorage()
+              authStateManager.revoke(authStateManager.refreshToken) { response, error in
+                           if error != nil {
+                               print(error!)
+                               callback(error)
+                               return
+                           }
+                       }
+                   }
+          catch let error {
+                       print("Logging out failed \(error)");
+                       callback(error)
+                       return
+                     }
+          
+          do{
+
+              oktaOidc.signOutOfOkta(authStateManager, from: viewController, callback: { error in
+                  if(error != nil){
+                      callback(error)
+                   
+                  }
+                  callback(nil);
+              })
+         }
 
          
      }
