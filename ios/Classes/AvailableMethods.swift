@@ -60,8 +60,8 @@ class AvailableMethods{
                   callback(nil);
               })
          }
-
-         
+          
+          self.authStateManager = nil
      }
      
       func initOkta(configuration: [String:String], callback: ((Error?) -> (Void))) {
@@ -124,7 +124,8 @@ class AvailableMethods{
          guard let oktaOidc = oktaOidc else {
              return
          }
-         self.authStateManager = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)
+        self.authStateManager = nil
+        self.authStateManager = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)
          oktaOidc.signInWithBrowser(from: viewController, callback: { [weak self] authStateManager, error in
            if let error = error {
              self?.authStateManager = nil
