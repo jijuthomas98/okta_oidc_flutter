@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
-import 'package:okta_oidc_flutter/init_okta.dart';
-import 'package:okta_oidc_flutter/okta_tokens.dart';
+import 'package:okta_oidc_flutter/src/init_okta.dart';
+import 'package:okta_oidc_flutter/src/okta_tokens.dart';
 
 class OktaOidcFlutter {
   static const MethodChannel _channel = MethodChannel('okta_oidc_flutter');
