@@ -7,6 +7,7 @@ package com.jiju.thomas.okta_oidc_flutter.operations;
 import android.app.Activity;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient;
 import com.okta.authn.sdk.AuthenticationStateHandlerAdapter;
@@ -15,6 +16,7 @@ import com.okta.authn.sdk.client.AuthenticationClients;
 import com.okta.authn.sdk.resource.AuthenticationResponse;
 import com.okta.oidc.RequestCallback;
 
+import com.okta.oidc.ResultCallback;
 import com.okta.oidc.net.response.UserInfo;
 import com.okta.oidc.results.Result;
 import com.okta.oidc.util.AuthorizationException;
@@ -127,6 +129,13 @@ public class Auth {
         }
     }
 
+    public static  void signInWithBrowser(Activity activity){
+        System.out.println("ASASASS");
+        OktaClient oktaClient = OktaClient.getInstance();
+        oktaClient.getWebAuthClient().signIn(activity,null);
+
+    }
+
     private static void awaitTerminationAfterShutdown(ExecutorService threadPool) {
         threadPool.shutdown();
         try {
@@ -142,28 +151,26 @@ public class Auth {
 
 
 
-    public static boolean signOut(Activity activity){
+    public synchronized static boolean signOut(Activity activity){
         OktaClient oktaClient = OktaClient.getInstance();
         final boolean[] isSignedOut = {false};
-        if(oktaClient.getAuthClient()!=null && oktaClient.getAuthClient().getSessionClient().isAuthenticated()){
-            try {
-                String accessToken =  oktaClient.getAuthClient().getSessionClient().getTokens().getAccessToken();
-                oktaClient.getAuthClient().getSessionClient().revokeToken(accessToken, new RequestCallback<Boolean, AuthorizationException>() {
-                    @Override
-                    public void onSuccess(@NonNull Boolean result) {
-                        isSignedOut[0] = true;
-                        System.out.println(" SIGNED OUT");
-                    }
 
-                    @Override
-                    public void onError(String error, AuthorizationException exception) {
-
-                    }
-                });
-            } catch (AuthorizationException e) {
-                e.printStackTrace();
+        oktaClient.getAuthClient().signOut(new ResultCallback<Integer, AuthorizationException>() {
+            @Override
+            public  void onSuccess(@NonNull Integer result) {
+                isSignedOut[0] = true;
             }
-        }
+
+            @Override
+            public void onCancel() {
+                isSignedOut[0] = false;
+            }
+
+            @Override
+            public void onError(@Nullable String msg, @Nullable AuthorizationException exception) {
+                isSignedOut[0]= false;
+            }
+        });
         return isSignedOut[0];
     }
 

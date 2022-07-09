@@ -27,7 +27,7 @@ class _MyAppState extends State<MyApp> {
         InitOkta(
           clientId: '0oa5gieiczjZLXlnd5d7',
           discoveryUrl: 'https://dev-24779440.okta.com/oauth2/default',
-          endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
+          endSessionRedirectUri: 'com.magnifi.app.staging:/app',
           redirectUrl: 'com.magnifi.app.staging:/app',
           scopes: ['openid', 'profile', 'email', 'offline_access'],
         ),
@@ -64,24 +64,24 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () async {
                   bool isAuthenticated =
                       await OktaOidcFlutter.isAuthenticated();
-                  if (isAuthenticated) {
-                    print(isAuthenticated);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('User Authenticated')));
-                  }
+
+                  print(isAuthenticated);
                 },
                 child: const Text('Is Authenticated'),
               ),
               TextButton(
                 onPressed: () async {
                   bool result = await OktaOidcFlutter.signOut();
-                  if (result) {
-                    print(result);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Signed out')));
-                  }
+
+                  print(result);
                 },
                 child: const Text('Sign Out'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await OktaOidcFlutter.sso();
+                },
+                child: const Text('SSO'),
               ),
             ],
           ),

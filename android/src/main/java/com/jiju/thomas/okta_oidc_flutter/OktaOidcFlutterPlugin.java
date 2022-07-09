@@ -97,6 +97,9 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
               boolean isAuthenticated = Auth.isAuthenticated();
               result.success(isAuthenticated);
               break;
+          case  AvailableMethods.WEB_SIGN_IN:
+              Auth.signInWithBrowser(mainActivity);
+              break;
           default:
               result.notImplemented();
               break;

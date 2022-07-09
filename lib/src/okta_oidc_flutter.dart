@@ -37,16 +37,21 @@ class OktaOidcFlutter {
     return OktaTokens.parse(tokens);
   }
 
+  static Future<OktaTokens> sso() async {
+    if (isInitialized == false) {
+      throw Exception("Cannot sign in before initializing Okta SDK");
+    }
+    var tokens = await _channel.invokeMethod("WEB_SIGN_IN");
+    return OktaTokens.parse(tokens);
+  }
+
   /// Sign out by revoking okta tokens
   static Future<bool> signOut() async {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
 
-    bool isSignedOut = false;
-    isSignedOut = await _channel.invokeMethod("SIGN_OUT") as bool;
-
-    return isSignedOut;
+    return await _channel.invokeMethod("SIGN_OUT") as bool;
   }
 
   /// Check if app is already Authenticated
@@ -54,10 +59,6 @@ class OktaOidcFlutter {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
-    try {
-      return await _channel.invokeMethod("IS_AUTHENTICATED") as bool;
-    } catch (e) {
-      throw Exception(e);
-    }
+    return await _channel.invokeMethod("IS_AUTHENTICATED") as bool;
   }
 }
