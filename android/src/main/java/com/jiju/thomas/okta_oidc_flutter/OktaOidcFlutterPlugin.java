@@ -5,20 +5,16 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jiju.thomas.okta_oidc_flutter.operations.ConfigOktaClient;
 import com.jiju.thomas.okta_oidc_flutter.operations.Auth;
+import com.jiju.thomas.okta_oidc_flutter.operations.SignIn;
 import com.jiju.thomas.okta_oidc_flutter.utils.AvailableMethods;
-import com.jiju.thomas.okta_oidc_flutter.utils.Errors;
-import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient;
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaRequestParameters;
 import com.okta.oidc.Tokens;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +43,10 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
 
   @Override
   public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-      // Create Okta Config
+
+
       switch (call.method) {
+          // Create Okta Config
           case AvailableMethods.CREATE_CONFIG:
               try {
                   ArrayList arguments = (ArrayList) call.arguments;
@@ -83,8 +81,8 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
               final String password = argMap.get("password");
               final String orgDomain = argMap.get("orgDomain");
               try {
-                  HashMap<String, String> authData = Auth.signInWithCredentials(email, password, orgDomain);
-                  result.success(authData);
+                  SignIn signIn = new SignIn();
+                  signIn.withCredentials(email, password, orgDomain,result);
               } catch (Exception e) {
                   e.printStackTrace();
               }

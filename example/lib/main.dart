@@ -50,13 +50,11 @@ class _MyAppState extends State<MyApp> {
             children: [
               TextButton(
                 onPressed: () async {
-                  OktaTokens tokens =
-                      await OktaOidcFlutter.signInWithCredentials(
+                  await OktaOidcFlutter.signInWithCredentials(
                     email: 'jiju.thomas@tifin.com',
-                    password: 'Thombra15@',
+                    password: 'Thombra',
                     orgDomain: 'https://dev-24779440.okta.com/',
                   );
-                  print(tokens.accessToken);
                 },
                 child: const Text('Sign In'),
               ),

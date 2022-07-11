@@ -1,0 +1,112 @@
+package com.jiju.thomas.okta_oidc_flutter.operations;
+
+
+import androidx.annotation.NonNull;
+
+import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient;
+import com.okta.authn.sdk.AuthenticationException;
+import com.okta.authn.sdk.AuthenticationStateHandlerAdapter;
+import com.okta.authn.sdk.client.AuthenticationClient;
+import com.okta.authn.sdk.client.AuthenticationClients;
+import com.okta.authn.sdk.resource.AuthenticationResponse;
+import com.okta.oidc.RequestCallback;
+import com.okta.oidc.clients.AuthClient;
+import com.okta.oidc.net.response.UserInfo;
+import com.okta.oidc.results.Result;
+import com.okta.oidc.util.AuthorizationException;
+
+import java.util.HashMap;
+
+import io.flutter.plugin.common.MethodChannel;
+
+
+public class SignIn {
+
+    public void withCredentials(String email, String password, String orgDomain, MethodChannel.Result result){
+
+        final AuthenticationClient authenticationClient;
+        try{
+            System.out.println("ENTRY");
+            authenticationClient = AuthenticationClients.builder().setOrgUrl(orgDomain).build();
+            new Thread(new Runnable(
+            ) {
+                @Override
+                public void run() {
+                    try {
+                        authenticationClient.authenticate(email, password.toCharArray(), null, new AuthenticationStateHandlerAdapter() {
+
+                            @Override
+                            public void handleSuccess(AuthenticationResponse successResponse) {
+                                String sessionToken;
+                                sessionToken = successResponse.getSessionToken();
+                                try {
+                                    signInWithSessionToken(sessionToken,result);
+                                    System.out.println("SIGN IN INIT");
+                                } catch (Exception e) {
+
+                                    throw new IllegalStateException(e);
+                                }
+                            }
+                            @Override
+                            public void handleUnknown(AuthenticationResponse unknownResponse) {
+
+                            }
+                        });
+                    } catch (AuthenticationException e) {
+                        result.error(String.valueOf(e.getCode()), e.toString(),e.getMessage());
+                    }
+                }
+            }).start();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public void signInWithSessionToken(String sessionToken,MethodChannel.Result methodResult) throws Exception{
+       AuthClient authClient = OktaClient.getInstance().getAuthClient();
+
+       try {
+           authClient.signIn(sessionToken, null, new RequestCallback<Result, AuthorizationException>() {
+               @Override
+               public void onSuccess(@NonNull Result result) {
+                   System.out.println("SIGN IN");
+                   try {
+                       String accessToken;
+                       HashMap<String,String> data = new HashMap<String,String>();
+                       accessToken =  authClient.getSessionClient().getTokens().getAccessToken();
+                       authClient.getSessionClient().getUserProfile(new RequestCallback<UserInfo, AuthorizationException>() {
+                           @Override
+                           public void onSuccess(@NonNull UserInfo result) {
+                               String userId;
+                               userId = result.get("sub").toString();
+                               data.put("accessToken",accessToken);
+                               data.put("userId",userId);
+                               methodResult.success(data);
+                           }
+
+                           @Override
+                           public void onError(String error, AuthorizationException exception) {
+
+                               methodResult.error(String.valueOf(exception.code), error,exception.errorDescription);
+                           }
+                       });
+                   }catch (Exception e){
+                       throw  new IllegalStateException(e);
+                   }
+               }
+               @Override
+               public void onError(String error, AuthorizationException exception) {
+                   methodResult.error(String.valueOf(exception.code), error,exception.errorDescription);
+               }
+           });
+       }catch (Exception e){
+           throw new IllegalStateException(e);
+       }
+    }
+
+
+
+    public void withBrowser(){
+
+    }
+}

@@ -18,7 +18,7 @@ class OktaOidcFlutter {
 
   /// Sign in with Credentials (use email and password),
   /// orgDomain as "https://{your org domain}okta.com/"
-  static Future<OktaTokens> signInWithCredentials({
+  static Future<void> signInWithCredentials({
     required String email,
     required String password,
     required String orgDomain,
@@ -26,15 +26,15 @@ class OktaOidcFlutter {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
-    var tokens = await _channel
-        .invokeMethod<Map<dynamic, dynamic>>("SIGN_IN_WITH_CREDENTIAL", [
+    var result = await _channel.invokeMethod("SIGN_IN_WITH_CREDENTIAL", [
       {
         "email": email,
         "password": password,
         "orgDomain": orgDomain,
       }
     ]);
-    return OktaTokens.parse(tokens);
+    print(result);
+    //  return OktaTokens.parse(tokens);
   }
 
   static Future<OktaTokens> sso() async {

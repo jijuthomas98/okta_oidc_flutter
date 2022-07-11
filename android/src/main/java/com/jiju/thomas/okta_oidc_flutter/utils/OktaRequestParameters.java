@@ -30,40 +30,20 @@ public class OktaRequestParameters {
         return clientId;
     }
 
-    public void setClientId(String clientId) {
-        this.clientId = clientId;
-    }
-
     public String getRedirectUri() {
         return redirectUri;
-    }
-
-    public void setRedirectUri(String redirectUri) {
-        this.redirectUri = redirectUri;
     }
 
     public String getEndSessionRedirectUri() {
         return endSessionRedirectUri;
     }
 
-    public void setEndSessionRedirectUri(String endSessionRedirectUri) {
-        this.endSessionRedirectUri = endSessionRedirectUri;
-    }
-
     public String getDiscoveryUri() {
         return discoveryUri;
     }
 
-    public void setDiscoveryUri(String discoveryUri) {
-        this.discoveryUri = discoveryUri;
-    }
-
     public String getScopes() {
         return String.join(" ",scopes);
-    }
-
-    public void setScopes(List<String> scopes) {
-        this.scopes = scopes;
     }
 
     public Boolean getRequireHardwareBackedKeyStore() {
