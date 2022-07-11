@@ -1,7 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:okta_oidc_flutter/okta_oidc_flutter_export.dart';
+import 'package:okta_oidc_flutter/okta_oidc_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,23 +16,14 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    initOktaOidc();
-  }
 
-  Future<void> initOktaOidc() async {
-    try {
-      OktaOidcFlutter.initOkta(
-        InitOkta(
-          clientId: '0oa5gieiczjZLXlnd5d7',
-          discoveryUrl: 'https://dev-24779440.okta.com/oauth2/default',
-          endSessionRedirectUri: 'com.magnifi.app.staging:/app',
-          redirectUrl: 'com.magnifi.app.staging:/app',
-          scopes: ['openid', 'profile', 'email', 'offline_access'],
-        ),
-      );
-    } catch (e) {
-      print(e);
-    }
+    OktaOidcFlutter.initOkta(InitOkta(
+        clientId: '0oa5gieiczjZLXlnd5d7',
+        issuer: 'https://dev-24779440.okta.com/oauth2/default',
+        endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
+        redirectUrl: 'com.magnifi.app.staging:/app',
+        scopes: ['openid', 'profile', 'email', 'offline_access'],
+        requireHardwareBackedKeyStore: false));
   }
 
   @override
@@ -53,7 +42,6 @@ class _MyAppState extends State<MyApp> {
                   await OktaOidcFlutter.signInWithCredentials(
                     email: 'jiju.thomas@tifin.com',
                     password: 'Thombra',
-                    orgDomain: 'https://dev-24779440.okta.com/',
                   );
                 },
                 child: const Text('Sign In'),

@@ -84,6 +84,7 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                   SignIn signIn = new SignIn();
                   signIn.withCredentials(email, password, orgDomain,result);
               } catch (Exception e) {
+                  result.error("1", e.getMessage(), e.getStackTrace());
                   e.printStackTrace();
               }
               break;
