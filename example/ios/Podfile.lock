@@ -3,7 +3,10 @@ PODS:
   - okta_oidc_flutter (0.0.1):
     - Flutter
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 5561f620eac07210073480df25000a63087d5893
     - OktaAuthSdk
     - OktaOidc
   - OktaAuthSdk (2.4.3)
@@ -13,20 +16,29 @@ PODS:
   - OktaOidc/AppAuth (3.11.2)
   - OktaOidc/Okta (3.11.2):
     - OktaOidc/AppAuth
+<<<<<<< HEAD
 >>>>>>> ce9fb6de9815a94c3a230e64b2a41cb4585a7c32
+=======
+>>>>>>> 5561f620eac07210073480df25000a63087d5893
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - okta_oidc_flutter (from `.symlinks/plugins/okta_oidc_flutter/ios`)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 5561f620eac07210073480df25000a63087d5893
 SPEC REPOS:
   trunk:
     - OktaAuthSdk
     - OktaOidc
 
+<<<<<<< HEAD
 >>>>>>> ce9fb6de9815a94c3a230e64b2a41cb4585a7c32
+=======
+>>>>>>> 5561f620eac07210073480df25000a63087d5893
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
@@ -36,15 +48,21 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
 <<<<<<< HEAD
+<<<<<<< HEAD
   okta_oidc_flutter: 0d9ed04d34e3c6a190fa9784b5859d59a76b5564
 
 PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
 =======
+=======
+>>>>>>> 5561f620eac07210073480df25000a63087d5893
   okta_oidc_flutter: f553ab52a826147d1536a4ae151cbde4b48c981d
   OktaAuthSdk: f00a17beb4e5c76a37c2c0ebc9e6b6999b829523
   OktaOidc: 15fb3d494103d4f07ba8a523b3347d02c4d30486
 
 PODFILE CHECKSUM: 4e8f8b2be68aeea4c0d5beb6ff1e79fface1d048
+<<<<<<< HEAD
 >>>>>>> ce9fb6de9815a94c3a230e64b2a41cb4585a7c32
+=======
+>>>>>>> 5561f620eac07210073480df25000a63087d5893
 
 COCOAPODS: 1.11.3

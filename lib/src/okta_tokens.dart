@@ -3,7 +3,7 @@ class OktaTokens {
   final String? accessToken;
 
   OktaTokens({
-    this.id,
+    required this.id,
     required this.accessToken,
   });
 

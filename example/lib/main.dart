@@ -16,23 +16,14 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    initOktaOidc();
-  }
 
-  Future<void> initOktaOidc() async {
-    try {
-      OktaOidcFlutter.initOkta(
-        InitOkta(
-          clientId: '0oa5gieiczjZLXlnd5d7',
-          issuer: 'https://dev-24779440.okta.com/oauth2/default',
-          endSessionRedirectUri: 'com.magnifi.app.staging:/app',
-          redirectUrl: 'com.magnifi.app.staging:/app',
-          scopes: ['openid', 'profile', 'email', 'offline_access'],
-        ),
-      );
-    } catch (e) {
-      print(e);
-    }
+    OktaOidcFlutter.initOkta(InitOkta(
+        clientId: '0oa5gieiczjZLXlnd5d7',
+        issuer: 'https://dev-24779440.okta.com/oauth2/default',
+        endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
+        redirectUrl: 'com.magnifi.app.staging:/app',
+        scopes: ['openid', 'profile', 'email', 'offline_access'],
+        requireHardwareBackedKeyStore: false));
   }
 
   @override
@@ -43,44 +34,13 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton(
-                onPressed: () async {
-                  OktaTokens tokens =
-                      await OktaOidcFlutter.signInWithCredentials(
-                    'jiju.thomas@tifin.com',
-                    'Thombra15@',
-                  );
-                  print(tokens.accessToken);
-                },
-                child: const Text('Sign In'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  bool isAuthenticated =
-                      await OktaOidcFlutter.isAuthenticated();
-
-                  print(isAuthenticated);
-                },
-                child: const Text('Is Authenticated'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  bool result = await OktaOidcFlutter.signOut();
-
-                  print(result);
-                },
-                child: const Text('Sign Out'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  await OktaOidcFlutter.sso();
-                },
-                child: const Text('SSO'),
-              ),
-            ],
+          child: TextButton(
+            child: const Text('Sign in'),
+            onPressed: () async {
+              OktaTokens o = await OktaOidcFlutter.signInWithCredentials(
+                  'gokul.krishnan@tifin.com', 'tPEGc96\$tT!7z');
+              print(o);
+            },
           ),
         ),
       ),
