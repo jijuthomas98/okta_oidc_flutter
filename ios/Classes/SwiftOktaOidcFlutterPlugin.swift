@@ -95,6 +95,7 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
           break
     
       case "SIGN_OUT":
+          print("IN CASE")
           availableMethods.logOut( callback: { error in
               if(error != nil) {
                   let flutterError: FlutterError = FlutterError(code: "Sign_Out_Error", message: error?.localizedDescription, details: error.debugDescription);

@@ -28,38 +28,31 @@ class AvailableMethods{
       func logOut( callback: @escaping ((Error?) -> (Void))){
           let viewController: UIViewController =
                          (UIApplication.shared.delegate?.window??.rootViewController)!;
-          guard let oktaOidc = oktaOidc else {
-              return
-          }
-          guard let authStateManager = authStateManager else {
-              return
-          }
-          do {
-              try authStateManager.removeFromSecureStorage()
-              authStateManager.revoke(authStateManager.refreshToken) { response, error in
-                           if error != nil {
-                               print(error!)
-                               callback(error)
-                               return
-                           }
-                       }
-                   }
-          catch let error {
-                       print("Logging out failed \(error)");
-                       callback(error)
-                       return
-                     }
-          
-          do{
-
-              oktaOidc.signOutOfOkta(authStateManager, from: viewController, callback: { error in
-                  if(error != nil){
-                      callback(error)
-                   
-                  }
-                  callback(nil);
-              })
-         }
+          self.authStateManager!.revoke(self.authStateManager!.accessToken) { response, error in
+                                                      if error != nil {
+                                                          print(error!)
+                                                          callback(error)
+                                                          return
+                                                      }
+                                                  }
+          self.authStateManager!.revoke(self.authStateManager!.accessToken)  { response, error in
+                                                      if error != nil {
+                                                          print(error!)
+                                                          callback(error)
+                                                          return
+                                                      }
+                                                  }
+                           
+          self.oktaOidc!.signOutOfOkta(authStateManager!, from: viewController, callback: { [weak self] error in
+              if(error != nil){
+                                    print("error")
+                                    callback(error)
+              
+                                }
+                      
+                      self?.authStateManager?.clear()
+                      callback(nil);
+                  })
           
           self.authStateManager = nil
      }
@@ -124,8 +117,6 @@ class AvailableMethods{
          guard let oktaOidc = oktaOidc else {
              return
          }
-        self.authStateManager = nil
-        self.authStateManager = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)
          oktaOidc.signInWithBrowser(from: viewController, callback: { [weak self] authStateManager, error in
            if let error = error {
              self?.authStateManager = nil
@@ -133,6 +124,8 @@ class AvailableMethods{
              callback(nil, error)
              return
            }
+            
+             self?.authStateManager = authStateManager!
              print("token:  \(String(describing: authStateManager!.accessToken!))")
              callback(
                  [
