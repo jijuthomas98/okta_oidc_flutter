@@ -1,7 +1,5 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:okta_oidc_flutter/okta_oidc_flutter_export.dart';
+import 'package:okta_oidc_flutter/okta_oidc_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -25,12 +23,11 @@ class _MyAppState extends State<MyApp> {
     try {
       OktaOidcFlutter.initOkta(
         InitOkta(
-          clientId: '0oa5gieiczjZLXlnd5d7',
-          discoveryUrl: 'https://dev-24779440.okta.com/oauth2/default',
-          endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
-          redirectUrl: 'com.magnifi.app.staging:/app',
-          scopes: ['openid', 'profile', 'email', 'offline_access'],
-        ),
+            clientId: '0oa5gieiczjZLXlnd5d7',
+            endSessionRedirectUri: 'com.magnifi.app.staging:/app',
+            redirectUrl: 'com.magnifi.app.staging:/app',
+            scopes: ['openid', 'profile', 'email', 'offline_access'],
+            issuer: 'https://dev-24779440.okta.com/oauth2/default'),
       );
     } catch (e) {
       print(e);
@@ -52,9 +49,8 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () async {
                   OktaTokens tokens =
                       await OktaOidcFlutter.signInWithCredentials(
-                    email: 'jiju.thomas@tifin.com',
-                    password: 'Thombra15@',
-                    orgDomain: 'https://dev-24779440.okta.com/',
+                    'jiju.thomas@tifin.com',
+                    'Thombra15@',
                   );
                   print(tokens.accessToken);
                 },
@@ -64,24 +60,24 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () async {
                   bool isAuthenticated =
                       await OktaOidcFlutter.isAuthenticated();
-                  if (isAuthenticated) {
-                    print(isAuthenticated);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('User Authenticated')));
-                  }
+
+                  print(isAuthenticated);
                 },
                 child: const Text('Is Authenticated'),
               ),
               TextButton(
                 onPressed: () async {
                   bool result = await OktaOidcFlutter.signOut();
-                  if (result) {
-                    print(result);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Signed out')));
-                  }
+
+                  print(result);
                 },
                 child: const Text('Sign Out'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await OktaOidcFlutter.sso();
+                },
+                child: const Text('SSO'),
               ),
             ],
           ),

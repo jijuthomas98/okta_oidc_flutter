@@ -4,13 +4,14 @@ class OktaTokens {
 
   OktaTokens({
     this.id,
-    this.accessToken,
+    required this.accessToken,
   });
 
   factory OktaTokens.parse(map) {
     return OktaTokens(
-      id: map['userId'] as String,
-      accessToken: map['accessToken'] as String,
+      id: map['userId'] != null ? map['userId'] as String : null,
+      accessToken:
+          map['accessToken'] != null ? map['accessToken'] as String : null,
     );
   }
 }

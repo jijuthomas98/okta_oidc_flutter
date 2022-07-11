@@ -7,6 +7,7 @@ package com.jiju.thomas.okta_oidc_flutter.operations;
 import android.app.Activity;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient;
 import com.okta.authn.sdk.AuthenticationStateHandlerAdapter;
@@ -15,6 +16,7 @@ import com.okta.authn.sdk.client.AuthenticationClients;
 import com.okta.authn.sdk.resource.AuthenticationResponse;
 import com.okta.oidc.RequestCallback;
 
+import com.okta.oidc.ResultCallback;
 import com.okta.oidc.net.response.UserInfo;
 import com.okta.oidc.results.Result;
 import com.okta.oidc.util.AuthorizationException;
@@ -29,15 +31,15 @@ import java.util.concurrent.TimeUnit;
 
 
 public class Auth {
-    public static HashMap<String,String> signInWithCredentials(String email, String password, String orgDomain){
-        AuthAndSignIn authAndSignIn = new AuthAndSignIn(email,password,orgDomain);
+    public static HashMap<String,String> signInWithCredentials(String email, String password, String orgDomain) {
+        AuthAndSignIn authAndSignIn = new AuthAndSignIn(email, password, orgDomain);
 
         ExecutorService taskExecutor = Executors.newSingleThreadExecutor();
         List<Callable<Void>> tasks = Arrays.asList(authAndSignIn);
-        try{
+        try {
             taskExecutor.invokeAll(tasks);
             awaitTerminationAfterShutdown(taskExecutor);
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return  authAndSignIn.getAuthData();
@@ -45,8 +47,9 @@ public class Auth {
 
 
     private static class AuthAndSignIn implements Callable<Void>{
-        private  String accessToken;
-        private  String userId;
+        private String accessToken;
+        private String userId;
+        private String error;
 
 
         String email;
@@ -98,33 +101,44 @@ public class Auth {
                                             }
                                         });
                                     } catch (AuthorizationException e) {
-                                        e.printStackTrace();
+                                        error= e.toString();
+                                        notifyToThread();
                                     }
                                 }
                                 @Override
                                 public void onError(String s, AuthorizationException e) {
-                                    e.printStackTrace();
+                                    error= e.toString();
+                                    notifyToThread();
                                 }
                             });
                         }
                     });
                 }catch ( Exception e){
-                    e.printStackTrace();
+                    error= e.toString();
+                    notifyToThread();
                 }
                 wait();
 
             }catch (Exception ex) {
-                ex.printStackTrace();
+                error= ex.toString();
+                notifyToThread();
             }
              return null;
         }
 
         public HashMap<String,String> getAuthData(){
-            HashMap<String,String> authData = new HashMap<String,String>();
+            HashMap<String,String> authData = new HashMap<>();
             authData.put("accessToken",accessToken);
             authData.put("userId",userId);
+            authData.put("error",error);
             return  authData;
         }
+    }
+
+    public static  void signInWithBrowser(Activity activity){
+        OktaClient oktaClient = OktaClient.getInstance();
+        oktaClient.getWebAuthClient().signIn(activity,null);
+
     }
 
     private static void awaitTerminationAfterShutdown(ExecutorService threadPool) {
@@ -142,28 +156,26 @@ public class Auth {
 
 
 
-    public static boolean signOut(Activity activity){
+    public synchronized static boolean signOut(Activity activity){
         OktaClient oktaClient = OktaClient.getInstance();
         final boolean[] isSignedOut = {false};
-        if(oktaClient.getAuthClient()!=null && oktaClient.getAuthClient().getSessionClient().isAuthenticated()){
-            try {
-                String accessToken =  oktaClient.getAuthClient().getSessionClient().getTokens().getAccessToken();
-                oktaClient.getAuthClient().getSessionClient().revokeToken(accessToken, new RequestCallback<Boolean, AuthorizationException>() {
-                    @Override
-                    public void onSuccess(@NonNull Boolean result) {
-                        isSignedOut[0] = true;
-                        System.out.println(" SIGNED OUT");
-                    }
 
-                    @Override
-                    public void onError(String error, AuthorizationException exception) {
-
-                    }
-                });
-            } catch (AuthorizationException e) {
-                e.printStackTrace();
+        oktaClient.getAuthClient().signOut(new ResultCallback<Integer, AuthorizationException>() {
+            @Override
+            public  void onSuccess(@NonNull Integer result) {
+                isSignedOut[0] = true;
             }
-        }
+
+            @Override
+            public void onCancel() {
+                isSignedOut[0] = false;
+            }
+
+            @Override
+            public void onError(@Nullable String msg, @Nullable AuthorizationException exception) {
+                isSignedOut[0]= false;
+            }
+        });
         return isSignedOut[0];
     }
 

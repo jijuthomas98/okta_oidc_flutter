@@ -86,6 +86,7 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                   HashMap<String, String> authData = Auth.signInWithCredentials(email, password, orgDomain);
                   result.success(authData);
               } catch (Exception e) {
+                  result.error("1", e.getMessage(), e.getStackTrace());
                   e.printStackTrace();
               }
               break;
@@ -96,6 +97,9 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
           case AvailableMethods.IS_AUTHENTICATED:
               boolean isAuthenticated = Auth.isAuthenticated();
               result.success(isAuthenticated);
+              break;
+          case  AvailableMethods.WEB_SIGN_IN:
+              Auth.signInWithBrowser(mainActivity);
               break;
           default:
               result.notImplemented();
