@@ -18,14 +18,14 @@ public class OktaClient {
 
     public static OktaClient getInstance(){
         if(oktaInstance == null){
-            throw  new AssertionError("Have to call init first");
+            return null;
         }
         return oktaInstance;
     }
 
     public synchronized static void init(OIDCConfig config, WebAuthClient webAuthClient, AuthClient authClient){
         if(oktaInstance != null){
-            throw new AssertionError("Okta instance already initialized");
+            return;
         }
         oktaInstance = new OktaClient(config,webAuthClient,authClient);
     }
