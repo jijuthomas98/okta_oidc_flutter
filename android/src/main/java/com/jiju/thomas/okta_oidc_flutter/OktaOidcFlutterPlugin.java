@@ -5,13 +5,10 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jiju.thomas.okta_oidc_flutter.operations.ConfigOktaClient;
 import com.jiju.thomas.okta_oidc_flutter.operations.Auth;
-import com.jiju.thomas.okta_oidc_flutter.operations.SignIn;
 import com.jiju.thomas.okta_oidc_flutter.utils.AvailableMethods;
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaRequestParameters;
-import com.okta.oidc.Tokens;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,8 +61,7 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                           endSessionRedirectUri,
                           discoveryUri,
                           scopes, requireHardwareBackedKeyStore);
-                  ConfigOktaClient.create(oktaRequestParameters, context);
-                  result.success(true);
+                  ConfigOktaClient.create(oktaRequestParameters, context,result);
 
               } catch (Exception e) {
                   result.error("1", e.getMessage(), e.getStackTrace());
@@ -73,31 +69,31 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
               break;
           // Sign in with Credentials
           case AvailableMethods.SIGN_IN_WITH_CREDENTIAL:
-              Tokens tokens;
-              ObjectMapper mapper = new ObjectMapper();
               ArrayList arguments = (ArrayList) call.arguments;
               HashMap<String, String> argMap = new HashMap<String, String>((Map<String, String>) arguments.get(0));
               final String email = argMap.get("email");
               final String password = argMap.get("password");
               final String orgDomain = argMap.get("orgDomain");
-              try {
-                  SignIn signIn = new SignIn();
-                  signIn.withCredentials(email, password, orgDomain,result);
-              } catch (Exception e) {
-                  result.error("1", e.getMessage(), e.getStackTrace());
-                  e.printStackTrace();
-              }
+                  Auth.signInWithCredentials(email,password,orgDomain,result);
               break;
           case AvailableMethods.SIGN_OUT:
-              boolean isSignedOut = Auth.signOut(mainActivity);
-              result.success(isSignedOut);
+              Auth.signOut(mainActivity,result);
               break;
           case AvailableMethods.IS_AUTHENTICATED:
-              boolean isAuthenticated = Auth.isAuthenticated();
-              result.success(isAuthenticated);
+              Auth.isAuthenticated(result);
               break;
           case  AvailableMethods.WEB_SIGN_IN:
-              Auth.signInWithBrowser(mainActivity);
+              ArrayList argument = (ArrayList) call.arguments;
+              HashMap<String, String> arg = new HashMap<String, String>((Map<String, String>) argument.get(0));
+              final  String idp = arg.get("idp");
+              Auth.signInWithBrowser(idp, mainActivity,result);
+              break;
+          case  AvailableMethods.FORGOT_PASSWORD:
+              ArrayList forgotPasswordArguments = (ArrayList) call.arguments;
+              HashMap<String, String>forgotPasswordMap  = new HashMap<String, String>((Map<String, String>) forgotPasswordArguments.get(0));
+              final String orgDom = forgotPasswordMap.get("orgDomain");
+              final String userName = forgotPasswordMap.get("userName");
+              Auth.forgotPassword(orgDom,userName,result);
               break;
           default:
               result.notImplemented();

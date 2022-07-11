@@ -10,10 +10,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient;
+import com.okta.authn.sdk.AuthenticationException;
 import com.okta.authn.sdk.AuthenticationStateHandlerAdapter;
 import com.okta.authn.sdk.client.AuthenticationClient;
 import com.okta.authn.sdk.client.AuthenticationClients;
 import com.okta.authn.sdk.resource.AuthenticationResponse;
+import com.okta.authn.sdk.resource.FactorType;
 import com.okta.oidc.AuthenticationPayload;
 import com.okta.oidc.RequestCallback;
 
@@ -42,67 +44,77 @@ public class Auth {
 
 
 
-    public static  void signInWithBrowser(Activity activity){
-        String accessToken = null;
-        final String[] userId = new String[1];
-        OktaClient oktaClient = OktaClient.getInstance();
-        String clientId = oktaClient.getConfig().getClientId();
-        AuthenticationPayload payload = new AuthenticationPayload.Builder()
-                .setIdp(clientId)
-                .setIdpScope("scope_of_your_idp")
-                .build();
+    public static  void signInWithBrowser(String idp,Activity activity,MethodChannel.Result result){
+        SignIn signIn = new SignIn();
+        signIn.withBrowser(idp,activity,result);
+    }
 
-        oktaClient.getWebAuthClient().signIn(activity,payload);
-//        try {
-//            accessToken = OktaClient.getInstance().getWebAuthClient().getSessionClient().getTokens().getAccessToken();
-//            OktaClient.getInstance().getAuthClient().getSessionClient().getUserProfile(new RequestCallback<UserInfo, AuthorizationException>() {
-//                @Override
-//                public void onSuccess(@NonNull UserInfo result) {
-//                    userId[0] = result.get("sub").toString();
-//                }
-//
-//                @Override
-//                public void onError(String error, AuthorizationException exception) {
-//
-//                }
-//            });
-//        }catch (Exception e){
-//            e.printStackTrace();
-//        }
-//        System.out.println(accessToken);
-//        System.out.println(userId[0]);
 
+    public static void forgotPassword(String orgDomain,String userName,MethodChannel.Result result){
+        if(OktaClient.getInstance().getAuthClient().getSessionClient().isAuthenticated() || OktaClient.getInstance().getWebAuthClient().getSessionClient().isAuthenticated() ){
+            return;
+        }
+        final AuthenticationClient authenticationClient;
+        authenticationClient = AuthenticationClients.builder().setOrgUrl(orgDomain).build();
+        try{
+            authenticationClient.recoverPassword(userName, FactorType.EMAIL, null, new AuthenticationStateHandlerAdapter() {
+                @Override
+                public void handleLockedOut(AuthenticationResponse lockedOut) {
+                    super.handleLockedOut(lockedOut);
+                }
+
+                @Override
+                public void handleSuccess(AuthenticationResponse successResponse) {
+                    HashMap<String,String> status = new HashMap<String,String>();
+                    status.put("status","WAITING");
+                    result.success(status);
+                }
+
+                @Override
+                public void handleUnknown(AuthenticationResponse unknownResponse) {
+                    result.error("400","Unknown error","Unable to recover password");
+                }
+            });
+        }catch (AuthenticationException e){
+            result.error(e.getCode(),e.getMessage(),e.getCauses());
+        }
     }
 
 
 
-
-    public synchronized static boolean signOut(Activity activity){
+    public static void signOut(Activity activity,MethodChannel.Result methodResult){
         OktaClient oktaClient = OktaClient.getInstance();
-        final boolean[] isSignedOut = {false};
-
+        if(oktaClient.getAuthClient() == null){
+            oktaClient.getWebAuthClient().signOutOfOkta(activity);
+            methodResult.success(true);
+            return;
+        }
         oktaClient.getAuthClient().signOut(new ResultCallback<Integer, AuthorizationException>() {
             @Override
-            public  void onSuccess(@NonNull Integer result) {
-                isSignedOut[0] = true;
+            public void onSuccess(@NonNull Integer result) {
+                methodResult.success(true);
             }
 
             @Override
             public void onCancel() {
-                isSignedOut[0] = false;
+                methodResult.success(false);
             }
 
             @Override
             public void onError(@Nullable String msg, @Nullable AuthorizationException exception) {
-                isSignedOut[0]= false;
+                assert exception != null;
+                methodResult.error(String.valueOf(exception.code), exception.toString(),exception.getMessage());
             }
         });
-        return isSignedOut[0];
     }
 
 
 
-    public static boolean isAuthenticated(){
-        return OktaClient.getInstance().getAuthClient().getSessionClient().isAuthenticated();
+    public static void isAuthenticated(MethodChannel.Result result){
+         if(OktaClient.getInstance().getAuthClient().getSessionClient().isAuthenticated()){
+             result.success(true);
+         }else {
+             result.success(false);
+         }
     }
 }

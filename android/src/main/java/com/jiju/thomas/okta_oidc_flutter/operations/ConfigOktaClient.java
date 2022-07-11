@@ -14,9 +14,11 @@ import com.okta.oidc.storage.SharedPreferenceStorage;
 
 import java.util.concurrent.Executors;
 
+import io.flutter.plugin.common.MethodChannel;
+
 
 public class ConfigOktaClient {
-    public static void create(OktaRequestParameters arg, Context context){
+    public static void create(OktaRequestParameters arg, Context context, MethodChannel.Result result){
         try{
             OIDCConfig config = new OIDCConfig.Builder()
                     .clientId(arg.getClientId())
@@ -43,6 +45,7 @@ public class ConfigOktaClient {
                     .create();
 
             OktaClient.init(config,webAuthClient,authClient);
+            result.success(true);
 
         }catch (Exception e){
             throw new IllegalStateException(Errors.oktaOidcError);

@@ -22,7 +22,6 @@ class OktaOidcFlutter {
       }
       isInitialized = true;
     } catch (e) {
-      print(e.toString());
       isInitialized = false;
     }
   }
@@ -58,11 +57,22 @@ class OktaOidcFlutter {
     return OktaTokens.parse(tokens);
   }
 
-  static Future<OktaTokens> sso() async {
+  static Future<OktaTokens> sso({required String idp}) async {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
-    var tokens = await _channel.invokeMethod("WEB_SIGN_IN");
+
+    // ignore: prefer_typing_uninitialized_variables
+    var tokens;
+
+    if (Platform.isAndroid) {
+      tokens = await _channel.invokeMethod("WEB_SIGN_IN", [
+        {"idp": idp}
+      ]);
+    } else {
+      tokens = await _channel.invokeMethod("WEB_SIGN_IN");
+    }
+
     return OktaTokens.parse(tokens);
   }
 
@@ -87,8 +97,18 @@ class OktaOidcFlutter {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
-    return await _channel.invokeMethod("FORGOT_PASSWORD", {
-      "username": userName,
-    });
+
+    if (Platform.isAndroid) {
+      return await _channel.invokeMethod("FORGOT_PASSWORD", [
+        {
+          "username": userName,
+          "orgDomain": 'https://dev-24779440.okta.com/',
+        }
+      ]);
+    } else {
+      return await _channel.invokeMethod("FORGOT_PASSWORD", {
+        "username": userName,
+      });
+    }
   }
 }

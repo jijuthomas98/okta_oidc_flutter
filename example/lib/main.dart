@@ -17,13 +17,16 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
 
-    OktaOidcFlutter.initOkta(InitOkta(
+    OktaOidcFlutter.initOkta(
+      InitOkta(
         clientId: '0oa5gieiczjZLXlnd5d7',
         issuer: 'https://dev-24779440.okta.com/oauth2/default',
         endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
         redirectUrl: 'com.magnifi.app.staging:/app',
         scopes: ['openid', 'profile', 'email', 'offline_access'],
-        requireHardwareBackedKeyStore: false));
+        requireHardwareBackedKeyStore: false,
+      ),
+    );
   }
 
   @override
@@ -40,8 +43,8 @@ class _MyAppState extends State<MyApp> {
               TextButton(
                 onPressed: () async {
                   await OktaOidcFlutter.signInWithCredentials(
-                    email: 'jiju.thomas@tifin.com',
-                    password: 'Thombra',
+                    email: 'gokul.krishnan@tifin.com',
+                    password: 'tPEGc96\$tT!7z',
                   );
                 },
                 child: const Text('Sign In'),
@@ -50,7 +53,6 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () async {
                   bool isAuthenticated =
                       await OktaOidcFlutter.isAuthenticated();
-
                   print(isAuthenticated);
                 },
                 child: const Text('Is Authenticated'),
@@ -65,7 +67,9 @@ class _MyAppState extends State<MyApp> {
               ),
               TextButton(
                 onPressed: () async {
-                  await OktaOidcFlutter.sso();
+                  await OktaOidcFlutter.sso(
+                    idp: '0oa5o7sccuy5YgrIz5d7',
+                  );
                 },
                 child: const Text('SSO'),
               ),
