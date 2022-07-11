@@ -20,6 +20,7 @@ import com.okta.oidc.AuthenticationPayload;
 import com.okta.oidc.RequestCallback;
 
 import com.okta.oidc.ResultCallback;
+import com.okta.oidc.Tokens;
 import com.okta.oidc.net.response.UserInfo;
 import com.okta.oidc.results.Result;
 import com.okta.oidc.util.AuthorizationException;
@@ -85,27 +86,46 @@ public class Auth {
     public static void signOut(Activity activity,MethodChannel.Result methodResult){
         OktaClient oktaClient = OktaClient.getInstance();
         if(oktaClient.getAuthClient() == null){
-            oktaClient.getWebAuthClient().signOutOfOkta(activity);
-            methodResult.success(true);
-            return;
-        }
-        oktaClient.getAuthClient().signOut(new ResultCallback<Integer, AuthorizationException>() {
-            @Override
-            public void onSuccess(@NonNull Integer result) {
+            try {
+                Tokens tokens = oktaClient.getWebAuthClient().getSessionClient().getTokens();
+                oktaClient.getWebAuthClient().signOutOfOkta(activity);
+                oktaClient.getWebAuthClient().getSessionClient().revokeToken(tokens.getRefreshToken(), new RequestCallback<Boolean, AuthorizationException>() {
+                    @Override
+                    public void onSuccess(@NonNull Boolean result) {
+                        oktaClient.getWebAuthClient().getSessionClient().clear();
+                        methodResult.success(true);
+                    }
+
+                    @Override
+                    public void onError(String error, AuthorizationException exception) {
+                        methodResult.error(String.valueOf(exception.code), exception.toString(),exception.getMessage());
+                    }
+                });
                 methodResult.success(true);
+                return;
+            }catch (Exception e){
+                e.printStackTrace();
             }
+        }
+        try{
+            Tokens tokens = oktaClient.getAuthClient().getSessionClient().getTokens();
+            oktaClient.getAuthClient().getSessionClient().revokeToken(tokens.getRefreshToken(), new RequestCallback<Boolean, AuthorizationException>() {
+                @Override
+                public void onSuccess(@NonNull Boolean result) {
+                    oktaClient.getAuthClient().getSessionClient().clear();
+                    methodResult.success(true);
+                }
 
-            @Override
-            public void onCancel() {
-                methodResult.success(false);
-            }
+                @Override
+                public void onError(String error, AuthorizationException exception) {
+                    methodResult.error(String.valueOf(exception.code), exception.toString(),exception.getMessage());
+                }
+            });
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 
-            @Override
-            public void onError(@Nullable String msg, @Nullable AuthorizationException exception) {
-                assert exception != null;
-                methodResult.error(String.valueOf(exception.code), exception.toString(),exception.getMessage());
-            }
-        });
+
     }
 
 

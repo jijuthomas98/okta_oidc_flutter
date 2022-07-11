@@ -79,7 +79,6 @@ public class SignIn {
            authClient.signIn(sessionToken, null, new RequestCallback<Result, AuthorizationException>() {
                @Override
                public void onSuccess(@NonNull Result result) {
-
                    try {
                        String accessToken;
                        HashMap<String,String> data = new HashMap<String,String>();
