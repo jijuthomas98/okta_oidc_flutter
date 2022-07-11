@@ -23,11 +23,12 @@ class _MyAppState extends State<MyApp> {
     try {
       OktaOidcFlutter.initOkta(
         InitOkta(
-            clientId: '0oa5gieiczjZLXlnd5d7',
-            endSessionRedirectUri: 'com.magnifi.app.staging:/app',
-            redirectUrl: 'com.magnifi.app.staging:/app',
-            scopes: ['openid', 'profile', 'email', 'offline_access'],
-            issuer: 'https://dev-24779440.okta.com/oauth2/default'),
+          clientId: '0oa5gieiczjZLXlnd5d7',
+          issuer: 'https://dev-24779440.okta.com/oauth2/default',
+          endSessionRedirectUri: 'com.magnifi.app.staging:/app',
+          redirectUrl: 'com.magnifi.app.staging:/app',
+          scopes: ['openid', 'profile', 'email', 'offline_access'],
+        ),
       );
     } catch (e) {
       print(e);
