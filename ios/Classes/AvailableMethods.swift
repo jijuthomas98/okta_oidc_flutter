@@ -31,13 +31,14 @@ class AvailableMethods{
             return
         }
         
-        
         let errorInValidatingIDToken : Error? = authStateManager.validateToken(idToken: authStateManager.idToken)
         
         if(errorInValidatingIDToken == nil){
             let viewContdroller: UIViewController =
             (UIApplication.shared.delegate?.window??.rootViewController)!;
-            
+            if #available(iOS 13,*) {
+                self.oktaOidc!.configuration.noSSO = true
+            }
             self.oktaOidc!.signOutOfOkta(authStateManager, from: viewContdroller, callback: { [weak self] error in
                 if(error != nil){
                     callback(error)
@@ -128,6 +129,9 @@ class AvailableMethods{
         guard let oktaOidc = oktaOidc else {
             return
         }
+        if #available(iOS 13,*) {
+            oktaOidc.configuration.noSSO = true
+        }
         oktaOidc.signInWithBrowser(from: viewController, callback: { [weak self] authStateManager, error in
             if let error = error {
                 self?.authStateManager = nil
@@ -204,6 +208,7 @@ class AvailableMethods{
                 [
                     "accessToken": authStateManager!.accessToken!,
                     "userId":successStatus.user!.id!,
+                    "sessionToken": successStatus.sessionToken!
                 ], nil)
         })
     }
