@@ -25,7 +25,6 @@ class _MyAppState extends State<MyApp> {
         endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
         redirectUrl: 'com.magnifi.app.staging:/app',
         scopes: ['openid', 'profile', 'email', 'offline_access'],
-        requireHardwareBackedKeyStore: false,
       ),
     );
   }
@@ -43,10 +42,12 @@ class _MyAppState extends State<MyApp> {
             children: [
               TextButton(
                 onPressed: () async {
-                  await OktaOidcFlutter.instance.signInWithCredentials(
+                  var token =
+                      await OktaOidcFlutter.instance.signInWithCredentials(
                     email: 'gokul.krishnan@tifin.com',
                     password: 'tPEGc96\$tT!7z',
                   );
+                  print(token.accessToken);
                 },
                 child: const Text('Sign In'),
               ),

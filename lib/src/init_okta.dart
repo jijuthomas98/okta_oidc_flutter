@@ -13,7 +13,7 @@ class InitOkta {
   /// The request scopes.
   final List<String> scopes;
 
-  final bool? requireHardwareBackedKeyStore;
+  final bool requireHardwareBackedKeyStore;
   final String? issuer;
 
   final String? idp;
@@ -28,16 +28,24 @@ class InitOkta {
     this.issuer,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'clientId': clientId,
-      'issuer': issuer,
-      'discoveryUri': issuer,
-      'endSessionRedirectUri': endSessionRedirectUri,
-      'redirectUri': redirectUrl,
-      'scopes': Platform.isAndroid ? scopes.join(',') : scopes,
-      'requireHardwareBackedKeyStore': false,
-      'idp': idp,
-    };
+  Map<dynamic, dynamic> toMap() {
+    Map<dynamic, dynamic> initOkta = {};
+
+    initOkta['clientId'] = clientId;
+    Platform.isIOS ? initOkta['issuer'] = issuer : null;
+    Platform.isAndroid ? initOkta['discoveryUri'] = issuer : null;
+    initOkta['endSessionRedirectUri'] = endSessionRedirectUri;
+    initOkta['redirectUri'] = redirectUrl;
+    Platform.isAndroid
+        ? initOkta['scopes'] = scopes.join(',')
+        : initOkta['scopes'] = scopes;
+
+    Platform.isAndroid
+        ? initOkta['requireHardwareBackedKeyStore'] =
+            requireHardwareBackedKeyStore ? 'true' : 'false'
+        : initOkta['requireHardwareBackedKeyStore'] =
+            requireHardwareBackedKeyStore;
+    Platform.isIOS ? initOkta['idp'] = idp : null;
+    return initOkta;
   }
 }
