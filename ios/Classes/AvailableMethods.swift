@@ -31,37 +31,43 @@ class AvailableMethods{
             return
         }
         
-        let viewContdroller: UIViewController =
-        (UIApplication.shared.delegate?.window??.rootViewController)!;
         
-        self.oktaOidc!.signOutOfOkta(authStateManager, from: viewContdroller, callback: { [weak self] error in
-            if(error != nil){
+        let errorInValidatingIDToken : Error? = authStateManager.validateToken(idToken: authStateManager.idToken)
+        
+        if(errorInValidatingIDToken == nil){
+            let viewContdroller: UIViewController =
+            (UIApplication.shared.delegate?.window??.rootViewController)!;
+            
+            self.oktaOidc!.signOutOfOkta(authStateManager, from: viewContdroller, callback: { [weak self] error in
+                if(error != nil){
+                    callback(error)
+                    return
+                }
+                authStateManager.revoke(authStateManager.accessToken) { response, error in
+                    if error != nil {
+                        callback(error)
+                        return
+                    }
+                }
+                authStateManager.revoke(authStateManager.refreshToken)  { response, error in
+                    if error != nil {
+                        callback(error)
+                        return
+                    }
+                }
                 
-                callback(error)
-                return
-            }
-            authStateManager.revoke(authStateManager.accessToken) { response, error in
-                if error != nil {
-                    
-                    callback(error)
-                    return
-                }
-            }
-            authStateManager.revoke(authStateManager.refreshToken)  { response, error in
-                if error != nil {
-                    
-                    callback(error)
-                    return
-                }
-            }
+                self?.authStateManager = nil
+                self?.authStateManager?.clear()
+                callback(nil);
+                
+            })
             
-            self?.authStateManager = nil
-            self?.authStateManager?.clear()
+        }
+        else{
+            self.authStateManager = nil
+            self.authStateManager?.clear()
             callback(nil);
-            
-        })
-        
-        
+        }
     }
     
     func initOkta(configuration: [String:String], callback: ((Error?) -> (Void))) {
