@@ -9,26 +9,30 @@ import '../okta_oidc_flutter.dart';
 class OktaOidcFlutter {
   static const MethodChannel _channel = MethodChannel('okta_oidc_flutter');
 
-  static bool isInitialized = false;
+  static OktaOidcFlutter? _instance;
+  OktaOidcFlutter._();
+  static OktaOidcFlutter get instance => _instance ??= OktaOidcFlutter._();
+
+  bool _isInitialized = false;
 
   /// Initialize Okta OIDC
-  static Future<void> initOkta(InitOkta request) async {
-    isInitialized = false;
+  Future<void> initOkta(InitOkta request) async {
+    _isInitialized = false;
     try {
       if (Platform.isAndroid) {
         await _channel.invokeMethod("CREATE_CONFIG", [request.toMap()]);
       } else {
         await _channel.invokeMethod("CREATE_CONFIG", request.toMap());
       }
-      isInitialized = true;
+      _isInitialized = true;
     } catch (e) {
-      isInitialized = false;
+      _isInitialized = false;
     }
   }
 
-  static Future<OktaTokens> signInWithCredentials(
+  Future<OktaTokens> signInWithCredentials(
       {required String email, required String password}) async {
-    if (isInitialized == false) {
+    if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
     Map? tokens;
@@ -57,8 +61,8 @@ class OktaOidcFlutter {
     return OktaTokens.parse(tokens);
   }
 
-  static Future<OktaTokens> sso(String? idp) async {
-    if (isInitialized == false) {
+  Future<OktaTokens> sso(String? idp) async {
+    if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
 
@@ -77,8 +81,8 @@ class OktaOidcFlutter {
   }
 
   /// Sign out by revoking okta tokens
-  static Future<bool> signOut() async {
-    if (isInitialized == false) {
+  Future<bool> signOut() async {
+    if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
 
@@ -86,15 +90,15 @@ class OktaOidcFlutter {
   }
 
   /// Check if app is already Authenticated
-  static Future<bool> isAuthenticated() async {
-    if (isInitialized == false) {
+  Future<bool> isAuthenticated() async {
+    if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
     return await _channel.invokeMethod("IS_AUTHENTICATED") as bool;
   }
 
-  static Future<Map>? forgotPassword(String userName) async {
-    if (isInitialized == false) {
+  Future<Map>? forgotPassword(String userName) async {
+    if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
 

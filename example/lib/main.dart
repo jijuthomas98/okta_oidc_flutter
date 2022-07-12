@@ -13,11 +13,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  OktaOidcFlutter? oktaOidcFlutter;
   @override
   void initState() {
     super.initState();
 
-    OktaOidcFlutter.initOkta(
+    OktaOidcFlutter.instance.initOkta(
       InitOkta(
         clientId: '0oa5gieiczjZLXlnd5d7',
         issuer: 'https://dev-24779440.okta.com/oauth2/default',
@@ -42,7 +43,7 @@ class _MyAppState extends State<MyApp> {
             children: [
               TextButton(
                 onPressed: () async {
-                  await OktaOidcFlutter.signInWithCredentials(
+                  await OktaOidcFlutter.instance.signInWithCredentials(
                     email: 'gokul.krishnan@tifin.com',
                     password: 'tPEGc96\$tT!7z',
                   );
@@ -52,14 +53,14 @@ class _MyAppState extends State<MyApp> {
               TextButton(
                 onPressed: () async {
                   bool isAuthenticated =
-                      await OktaOidcFlutter.isAuthenticated();
+                      await OktaOidcFlutter.instance.isAuthenticated();
                   print(isAuthenticated);
                 },
                 child: const Text('Is Authenticated'),
               ),
               TextButton(
                 onPressed: () async {
-                  bool result = await OktaOidcFlutter.signOut();
+                  bool result = await OktaOidcFlutter.instance.signOut();
 
                   print(result);
                 },
@@ -67,7 +68,7 @@ class _MyAppState extends State<MyApp> {
               ),
               TextButton(
                 onPressed: () async {
-                  await OktaOidcFlutter.sso('0oa5o7sccuy5YgrIz5d7');
+                  await OktaOidcFlutter.instance.sso('0oa5o7sccuy5YgrIz5d7');
                 },
                 child: const Text('SSO'),
               ),
