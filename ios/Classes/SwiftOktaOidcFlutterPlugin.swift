@@ -22,7 +22,7 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
             let clientId: String = oktaInfo["clientId"] as! String;
             let issuer: String = oktaInfo["issuer"] as! String;
             let endSessionRedirectUri: String? = oktaInfo["endSessionRedirectUri"] as? String;
-            let redirectUrl: String = oktaInfo["redirectUrl"] as! String;
+            let redirectUrl: String = oktaInfo["redirectUri"] as! String;
             let idp: String? = oktaInfo["idp"] as? String;
             let scopeArray: [String] = oktaInfo["scopes"] as! [String];
             let scopes = scopeArray.joined(separator: " ");
@@ -40,6 +40,7 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
                 "scopes": scopes,
                 "redirectUri": redirectUrl,
             ] ;
+            
             return availableMethods.initOkta(configuration: oktaConfigMap, callback: { error in
                 if(error != nil) {
                     result(error);

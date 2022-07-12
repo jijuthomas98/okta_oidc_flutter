@@ -8,7 +8,6 @@ class OktaTokens {
   });
 
   factory OktaTokens.parse(map) {
-    print(map);
     return OktaTokens(
       id: map['userId'] != null ? map['userId'] as String : null,
       accessToken:

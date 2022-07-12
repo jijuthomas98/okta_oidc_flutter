@@ -31,16 +31,13 @@ class InitOkta {
   Map<String, dynamic> toMap() {
     return {
       'clientId': clientId,
+      'issuer': issuer,
+      'discoveryUri': issuer,
       'endSessionRedirectUri': endSessionRedirectUri,
       'redirectUri': redirectUrl,
       'scopes': Platform.isAndroid ? scopes.join(',') : scopes,
-      'requireHardwareBackedKeyStore': (requireHardwareBackedKeyStore != null &&
-              requireHardwareBackedKeyStore!)
-          ? 'true'
-          : 'false',
-      'idp': Platform.isAndroid ? '0oa5o7sccuy5YgrIz5d7' : idp,
-      'issuer': issuer,
-      'discoveryUri': issuer,
+      'requireHardwareBackedKeyStore': false,
+      'idp': idp,
     };
   }
 }
