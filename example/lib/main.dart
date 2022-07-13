@@ -69,7 +69,8 @@ class _MyAppState extends State<MyApp> {
               ),
               TextButton(
                 onPressed: () async {
-                  await OktaOidcFlutter.instance.sso('0oa5o7sccuy5YgrIz5d7');
+                  await OktaOidcFlutter.instance
+                      .sso(idp: '0oa5o7sccuy5YgrIz5d7');
                 },
                 child: const Text('SSO'),
               ),

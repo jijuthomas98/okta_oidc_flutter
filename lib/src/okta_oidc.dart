@@ -61,7 +61,7 @@ class OktaOidcFlutter {
     return OktaTokens.parse(tokens);
   }
 
-  Future<OktaTokens> sso(String? idp) async {
+  Future<OktaTokens> sso({String? idp}) async {
     if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
