@@ -30,7 +30,9 @@ class OktaOidcFlutter {
   }
 
   Future<OktaTokens> signInWithCredentials(
-      {required String email, required String password}) async {
+      {required String email,
+      required String password,
+      required String domainUrl}) async {
     if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
@@ -42,7 +44,7 @@ class OktaOidcFlutter {
         {
           "email": email,
           "password": password,
-          "orgDomain": 'https://dev-24779440.okta.com/',
+          "orgDomain": domainUrl,
         }
       ]);
     } else {
@@ -91,7 +93,7 @@ class OktaOidcFlutter {
     return await _channel.invokeMethod("IS_AUTHENTICATED") as bool;
   }
 
-  Future<Map>? forgotPassword(String userName) async {
+  Future<Map>? forgotPassword(String userName, String domainUrl) async {
     if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
@@ -100,7 +102,7 @@ class OktaOidcFlutter {
       return await _channel.invokeMethod("FORGOT_PASSWORD", [
         {
           "username": userName,
-          "orgDomain": 'https://dev-24779440.okta.com/',
+          "orgDomain": domainUrl,
         }
       ]);
     } else {
