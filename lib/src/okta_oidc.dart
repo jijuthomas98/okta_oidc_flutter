@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../okta_oidc_flutter.dart';
@@ -36,32 +35,27 @@ class OktaOidcFlutter {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
     Map? tokens;
-    try {
-      if (Platform.isAndroid) {
-        tokens = await _channel
-            .invokeMethod<Map<dynamic, dynamic>>("SIGN_IN_WITH_CREDENTIAL", [
-          {
-            "email": email,
-            "password": password,
-            "orgDomain": 'https://dev-24779440.okta.com/',
-          }
-        ]);
-      } else {
-        tokens = await _channel.invokeMethod(
-          "SIGN_IN_WITH_CREDENTIAL",
-          {'username': email, 'password': password},
-        );
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        print(e);
-      }
+
+    if (Platform.isAndroid) {
+      tokens = await _channel
+          .invokeMethod<Map<dynamic, dynamic>>("SIGN_IN_WITH_CREDENTIAL", [
+        {
+          "email": email,
+          "password": password,
+          "orgDomain": 'https://dev-24779440.okta.com/',
+        }
+      ]);
+    } else {
+      tokens = await _channel.invokeMethod(
+        "SIGN_IN_WITH_CREDENTIAL",
+        {'username': email, 'password': password},
+      );
     }
 
     return OktaTokens.parse(tokens);
   }
 
-  Future<OktaTokens> sso(String? idp) async {
+  Future<OktaTokens> sso({String? idp}) async {
     if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
