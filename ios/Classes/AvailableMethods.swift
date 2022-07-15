@@ -328,7 +328,8 @@ class AvailableMethods{
                                                     case .success(let tokenResponse):
                                                         let tokens = tokenResponse
                                                         callback([
-                                                            "accessToken": tokens.accessToken
+                                                            "accessToken": tokens.accessToken,
+                                                            "userId":tokens.id
                                                         ],nil)
                                                     case .failure(let error):
                                                         callback(nil, error)
