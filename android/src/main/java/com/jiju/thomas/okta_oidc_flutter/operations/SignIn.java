@@ -20,15 +20,7 @@ import com.okta.oidc.clients.AuthClient;
 import com.okta.oidc.net.response.UserInfo;
 import com.okta.oidc.results.Result;
 import com.okta.oidc.util.AuthorizationException;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
-
-import javax.xml.transform.OutputKeys;
-
-import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 
 

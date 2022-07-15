@@ -1,8 +1,6 @@
 package com.jiju.thomas.okta_oidc_flutter.operations;
 
 import android.content.Context;
-
-
 import com.jiju.thomas.okta_oidc_flutter.utils.Errors;
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient;
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaRequestParameters;
@@ -11,9 +9,7 @@ import com.okta.oidc.Okta;
 import com.okta.oidc.clients.AuthClient;
 import com.okta.oidc.clients.web.WebAuthClient;
 import com.okta.oidc.storage.SharedPreferenceStorage;
-
 import java.util.concurrent.Executors;
-
 import io.flutter.plugin.common.MethodChannel;
 
 

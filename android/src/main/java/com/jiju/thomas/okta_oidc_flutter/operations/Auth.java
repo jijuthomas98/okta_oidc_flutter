@@ -5,10 +5,7 @@ package com.jiju.thomas.okta_oidc_flutter.operations;
 
 
 import android.app.Activity;
-
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient;
 import com.okta.authn.sdk.AuthenticationException;
 import com.okta.authn.sdk.AuthenticationStateHandlerAdapter;
@@ -16,23 +13,10 @@ import com.okta.authn.sdk.client.AuthenticationClient;
 import com.okta.authn.sdk.client.AuthenticationClients;
 import com.okta.authn.sdk.resource.AuthenticationResponse;
 import com.okta.authn.sdk.resource.FactorType;
-import com.okta.oidc.AuthenticationPayload;
 import com.okta.oidc.RequestCallback;
-
-import com.okta.oidc.ResultCallback;
 import com.okta.oidc.Tokens;
-import com.okta.oidc.net.response.UserInfo;
-import com.okta.oidc.results.Result;
 import com.okta.oidc.util.AuthorizationException;
-
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 import io.flutter.plugin.common.MethodChannel;
 
 
@@ -125,6 +109,11 @@ public class Auth {
             e.printStackTrace();
         }
 
+
+    }
+
+
+    public static void register(MethodChannel.Result result){
 
     }
 
