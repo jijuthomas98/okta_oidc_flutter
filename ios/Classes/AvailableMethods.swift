@@ -9,6 +9,7 @@ import Foundation
 import OktaOidc
 import OktaAuthSdk
 import OktaIdx
+import UIKit
 
 class AvailableMethods{
     var oktaOidc: OktaOidc?
@@ -27,10 +28,31 @@ class AvailableMethods{
     
     
     func logOut( callback: @escaping ((Error?) -> (Void))){
-        
+        guard let oktaOidc = oktaOidc else {
+            return
+        }
         guard let authStateManager = authStateManager else {
             return
         }
+        
+        let flow = InteractionCodeFlow(
+            issuer: URL(string: oktaOidc.configuration.issuer)!,
+            clientId: oktaOidc.configuration.clientId,
+            scopes: oktaOidc.configuration.scopes,
+            redirectUri: oktaOidc.configuration.redirectUri)
+        
+        flow.start { result in
+            switch result {
+            case .success(let response):
+                if(response.isLoginSuccessful ){
+                   let res = response.remediations[.cancel]
+                    response.cancel()
+                }
+            case .failure(let error):
+                callback(error)
+            }
+        }
+        
         
         let errorInValidatingIDToken : Error? = authStateManager.validateToken(idToken: authStateManager.idToken)
         
@@ -120,8 +142,7 @@ class AvailableMethods{
         flow.start { result in
             switch result {
             case .success(let response):
-                print(response)
-                self.handleRegistrationSuccess(userName: Username, password: Password, response: response, callback: callback)
+                self.handleRegistrationSuccess(username: Username, password: Password, response: response, callback: callback)
             case .failure(let error):
                 callback(nil, error)
                 
@@ -239,24 +260,27 @@ class AvailableMethods{
     }
     
     
-    func handleRegistrationSuccess(userName:String, password: String, response: Response,callback: @escaping (( [String:String]?,Error?) -> Void))  {
-        print(response)
+    func handleRegistrationSuccess(username:String, password: String, response: Response,callback: @escaping (( [String:String]?,Error?) -> Void))  {
+        if(response.isLoginSuccessful){
+            response.cancel()
+            return
+        }
         guard let remediation = response.remediations[.selectEnrollProfile] else {
             return
         }
         remediation.proceed { remediationResponse in
             switch remediationResponse {
             case .success(let successResponse):
-                print(successResponse)
                 guard let remediation = successResponse.remediations[.enrollProfile],
                       
                         let emailField = remediation["userProfile.email"],
                       let selfRoleField = remediation["userProfile.magnifi_self_role"]
                 else {
+                    successResponse.cancel()
                     return;
                 }
                 
-                emailField.value = userName
+                emailField.value = username
                 selfRoleField.value = "Individual Investor"
                 
                 
@@ -268,32 +292,35 @@ class AvailableMethods{
                               let authenticationOption = authenticatorField.options?.first(where: { option in
                                   option.label == "Password"
                               })
-                        else{return}
-                        
+                        else{
+                            successResponse.cancel()
+                            return
+                            
+                        }
                         authenticatorField.selectedOption = authenticationOption
-                        
                         remediation.proceed { authOptionResult in
                             switch authOptionResult{
                             case .success(let authOptionResponse):
-                                print(authOptionResponse)
+                            
                                 guard let remediation = authOptionResponse.remediations[.enrollAuthenticator],
                                       let passcode = remediation["credentials.passcode"]
-                                else{return}
-                                
+                                else{
+                                    authOptionResponse.cancel()
+                                    return}
                                 passcode.value = password
-                                
                                 remediation.proceed { passcodeResult in
                                     switch passcodeResult{
-                                        
                                     case .success(let passcodeResponse):
-                                        
                                         guard let remediation = passcodeResponse.remediations[.skip]
-                                        else{return}
+                                        else{
+                                            passcodeResponse.cancel()
+                                            return}
                                         remediation.proceed { skipResponse in
                                             switch skipResponse{
                                             case .success(let finalResponse):
                                                 guard finalResponse.isLoginSuccessful
                                                 else {
+                                                    finalResponse.cancel()
                                                     return
                                                 }
                                                 finalResponse.exchangeCode { tokenResult in
@@ -310,9 +337,7 @@ class AvailableMethods{
                                             case .failure(let error):
                                                 callback(nil, error)
                                             }
-                                            
                                         }
-                                        
                                     case .failure(let error):
                                         callback(nil, error)
                                         return
@@ -323,10 +348,8 @@ class AvailableMethods{
                                 return
                             }
                         }
-                        
-                        
-                        
                     case .failure(let error):
+                        successResponse.cancel()
                         callback(nil, error)
                         return
                     }
