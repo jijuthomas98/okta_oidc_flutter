@@ -66,6 +66,23 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
                 result(token);
             });
             break
+        case "REGISTER_WITH_CREDENTIAL":
+            guard let creds: Dictionary = call.arguments as? [String: String] else {
+                result(-1);
+                return;
+            }
+            let username: String = creds["email"]! as String;
+            let password: String = creds["password"]! as String;
+            
+            availableMethods.registerWithCreds(Username: username, Password: password,callback: {token,error  in
+                if(error != nil) {
+                    let flutterError: FlutterError = FlutterError(code: "Register_Error", message: error?.localizedDescription, details: error.debugDescription);
+                    result(flutterError);
+                    return
+                }
+                result(token);
+            });
+            break
         case "WEB_SIGN_IN":
             availableMethods.signInWithBrowser(callback: {token,error  in
                 if(error != nil) {

@@ -8,6 +8,7 @@
 import Foundation
 import OktaOidc
 import OktaAuthSdk
+import OktaIdx
 
 class AvailableMethods{
     var oktaOidc: OktaOidc?
@@ -106,12 +107,36 @@ class AvailableMethods{
         }
     }
     
+    func registerWithCreds(Username: String!, Password: String!, callback: @escaping (([String:String]?,Error?) -> Void)){
+        guard let oktaOidc = oktaOidc else {
+            return
+        }
+        let flow = InteractionCodeFlow(
+            issuer: URL(string: oktaOidc.configuration.issuer)!,
+            clientId: oktaOidc.configuration.clientId,
+            scopes: oktaOidc.configuration.scopes,
+            redirectUri: oktaOidc.configuration.redirectUri)
+        
+        flow.start { result in
+            switch result {
+            case .success(let response):
+                print(response)
+                self.handleRegistrationSuccess(userName: Username, password: Password, response: response, callback: callback)
+            case .failure(let error):
+                callback(nil, error)
+                
+            }
+        }
+        
+    }
+    
+    
+    
     func forgotPassword(Username: String!, callback: @escaping (([String:String]?,Error?) -> Void)){
         guard let oktaOidc = oktaOidc else {
             return
         }
         let domainUrl: URL = URL(string: oktaOidc.configuration.issuer)!
-        
         OktaAuthSdk.recoverPassword(with: domainUrl, username: Username, factorType: OktaRecoveryFactors.email) { authStatus in
             let successStatus: String = authStatus.factorResult!.rawValue
             
@@ -213,4 +238,106 @@ class AvailableMethods{
         })
     }
     
+    
+    func handleRegistrationSuccess(userName:String, password: String, response: Response,callback: @escaping (( [String:String]?,Error?) -> Void))  {
+        print(response)
+        guard let remediation = response.remediations[.selectEnrollProfile] else {
+            return
+        }
+        remediation.proceed { remediationResponse in
+            switch remediationResponse {
+            case .success(let successResponse):
+                print(successResponse)
+                guard let remediation = successResponse.remediations[.enrollProfile],
+                      
+                        let emailField = remediation["userProfile.email"],
+                      let selfRoleField = remediation["userProfile.magnifi_self_role"]
+                else {
+                    return;
+                }
+                
+                emailField.value = userName
+                selfRoleField.value = "Individual Investor"
+                
+                
+                remediation.proceed { secondResult in
+                    switch secondResult{
+                    case .success(let secondResponse):
+                        guard let remediation = secondResponse.remediations[.selectAuthenticatorEnroll],
+                              let authenticatorField = remediation["authenticator"],
+                              let authenticationOption = authenticatorField.options?.first(where: { option in
+                                  option.label == "Password"
+                              })
+                        else{return}
+                        
+                        authenticatorField.selectedOption = authenticationOption
+                        
+                        remediation.proceed { authOptionResult in
+                            switch authOptionResult{
+                            case .success(let authOptionResponse):
+                                print(authOptionResponse)
+                                guard let remediation = authOptionResponse.remediations[.enrollAuthenticator],
+                                      let passcode = remediation["credentials.passcode"]
+                                else{return}
+                                
+                                passcode.value = password
+                                
+                                remediation.proceed { passcodeResult in
+                                    switch passcodeResult{
+                                        
+                                    case .success(let passcodeResponse):
+                                        
+                                        guard let remediation = passcodeResponse.remediations[.skip]
+                                        else{return}
+                                        remediation.proceed { skipResponse in
+                                            switch skipResponse{
+                                            case .success(let finalResponse):
+                                                guard finalResponse.isLoginSuccessful
+                                                else {
+                                                    return
+                                                }
+                                                finalResponse.exchangeCode { tokenResult in
+                                                    switch tokenResult{
+                                                    case .success(let tokenResponse):
+                                                        let tokens = tokenResponse
+                                                        callback([
+                                                            "accessToken": tokens.accessToken
+                                                        ],nil)
+                                                    case .failure(let error):
+                                                        callback(nil, error)
+                                                    }
+                                                }
+                                            case .failure(let error):
+                                                callback(nil, error)
+                                            }
+                                            
+                                        }
+                                        
+                                    case .failure(let error):
+                                        callback(nil, error)
+                                        return
+                                    }
+                                }
+                            case .failure(let error):
+                                callback(nil, error)
+                                return
+                            }
+                        }
+                        
+                        
+                        
+                    case .failure(let error):
+                        callback(nil, error)
+                        return
+                    }
+                    
+                }
+            case .failure(let error):
+                callback(nil, error)
+                return
+                
+            }
+        }
+        
+    }
 }

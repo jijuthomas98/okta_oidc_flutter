@@ -111,4 +111,13 @@ class OktaOidcFlutter {
       });
     }
   }
+
+  Future<OktaTokens> registerWithCreds(String email, String password) async {
+    var tokens = await _channel.invokeMethod("REGISTER_WITH_CREDENTIAL", {
+      "email": email,
+      "password": password,
+    });
+
+    return OktaTokens.parse(tokens);
+  }
 }

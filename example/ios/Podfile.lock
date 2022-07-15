@@ -1,0 +1,46 @@
+PODS:
+  - Flutter (1.0.0)
+  - okta_oidc_flutter (0.0.1):
+    - Flutter
+    - OktaAuthSdk
+    - OktaIdx
+    - OktaOidc
+  - OktaAuthFoundation (1.0.0)
+  - OktaAuthSdk (2.4.3)
+  - OktaIdx (3.0.0):
+    - OktaAuthFoundation (= 1.0.0)
+  - OktaOidc (3.11.2):
+    - OktaOidc/AppAuth (= 3.11.2)
+    - OktaOidc/Okta (= 3.11.2)
+  - OktaOidc/AppAuth (3.11.2)
+  - OktaOidc/Okta (3.11.2):
+    - OktaOidc/AppAuth
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - okta_oidc_flutter (from `.symlinks/plugins/okta_oidc_flutter/ios`)
+
+SPEC REPOS:
+  trunk:
+    - OktaAuthFoundation
+    - OktaAuthSdk
+    - OktaIdx
+    - OktaOidc
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  okta_oidc_flutter:
+    :path: ".symlinks/plugins/okta_oidc_flutter/ios"
+
+SPEC CHECKSUMS:
+  Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
+  okta_oidc_flutter: 4e6a93faafd36f58e0a45b05e940656b852ea7ab
+  OktaAuthFoundation: e0a83017a38cdec83cf00d2b4a598e3e78c34461
+  OktaAuthSdk: f00a17beb4e5c76a37c2c0ebc9e6b6999b829523
+  OktaIdx: f13339679200b604af1b5bf5f0474330b02768e4
+  OktaOidc: 15fb3d494103d4f07ba8a523b3347d02c4d30486
+
+PODFILE CHECKSUM: 4e8f8b2be68aeea4c0d5beb6ff1e79fface1d048
+
+COCOAPODS: 1.11.3

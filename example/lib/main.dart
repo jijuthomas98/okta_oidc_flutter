@@ -20,8 +20,8 @@ class _MyAppState extends State<MyApp> {
 
     OktaOidcFlutter.instance.initOkta(
       InitOkta(
-        clientId: '0oa5gieiczjZLXlnd5d7',
-        issuer: 'https://dev-24779440.okta.com/oauth2/default',
+        clientId: '0oa1k4uyv06twnAW8697',
+        issuer: 'https://magnifi-dev.okta.com/oauth2/default',
         endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
         redirectUrl: 'com.magnifi.app.staging:/app',
         scopes: ['openid', 'profile', 'email', 'offline_access'],
@@ -42,12 +42,12 @@ class _MyAppState extends State<MyApp> {
             children: [
               TextButton(
                 onPressed: () async {
-                  var token =
-                      await OktaOidcFlutter.instance.signInWithCredentials(
-                    email: 'gokul.krishnan@tifin.com',
-                    password: 'tPEGc96\$tT!7z',
+                  OktaTokens token =
+                      await OktaOidcFlutter.instance.registerWithCreds(
+                    'gokul.krishnanoooodo@tifin.com',
+                    'tPEGc96\$tT!7z',
                   );
-                  print(token.accessToken);
+                  print(token);
                 },
                 child: const Text('Sign In'),
               ),
