@@ -46,6 +46,7 @@ class _MyAppState extends State<MyApp> {
                       await OktaOidcFlutter.instance.signInWithCredentials(
                     email: 'gokul.krishnan@tifin.com',
                     password: 'tPEGc96\$tT!7z',
+                    domainUrl: 'https://dev-24779440.okta.com/',
                   );
                   print(token.accessToken);
                 },
@@ -73,6 +74,12 @@ class _MyAppState extends State<MyApp> {
                       .sso(idp: '0oa5o7sccuy5YgrIz5d7');
                 },
                 child: const Text('SSO'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  await OktaOidcFlutter.instance.register();
+                },
+                child: const Text('Register'),
               ),
             ],
           ),

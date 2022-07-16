@@ -7,4 +7,5 @@ public class AvailableMethods{
     public static final String IS_AUTHENTICATED = "IS_AUTHENTICATED";
     public static final String WEB_SIGN_IN = "WEB_SIGN_IN";
     public static final String FORGOT_PASSWORD = "FORGOT_PASSWORD";
+    public static final String REGISTER = "REGISTER";
 }
