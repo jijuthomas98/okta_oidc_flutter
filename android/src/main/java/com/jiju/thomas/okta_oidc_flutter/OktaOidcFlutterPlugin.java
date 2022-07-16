@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 
 import com.jiju.thomas.okta_oidc_flutter.operations.ConfigOktaClient;
 import com.jiju.thomas.okta_oidc_flutter.operations.Auth;
+import com.jiju.thomas.okta_oidc_flutter.operations.IDXMethod;
 import com.jiju.thomas.okta_oidc_flutter.utils.AvailableMethods;
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaRequestParameters;
 
@@ -94,6 +95,11 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
               final String orgDom = forgotPasswordMap.get("orgDomain");
               final String userName = forgotPasswordMap.get("userName");
               Auth.forgotPassword(orgDom,userName,result);
+              break;
+          case  AvailableMethods.REGISTER:
+//              IDXMethod idxMethod = new IDXMethod();
+//              idxMethod.register();
+              Auth.register();
               break;
           default:
               result.notImplemented();
