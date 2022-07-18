@@ -29,10 +29,10 @@ class OktaOidcFlutter {
     }
   }
 
-  Future<OktaTokens> signInWithCredentials(
-      {required String email,
-      required String password,
-      required String domainUrl}) async {
+  Future<OktaTokens> signInWithCredentials({
+    required String email,
+    required String password,
+  }) async {
     if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
@@ -41,11 +41,7 @@ class OktaOidcFlutter {
     if (Platform.isAndroid) {
       tokens = await _channel
           .invokeMethod<Map<dynamic, dynamic>>("SIGN_IN_WITH_CREDENTIAL", [
-        {
-          "email": email,
-          "password": password,
-          "orgDomain": domainUrl,
-        }
+        {"email": email, "password": password}
       ]);
     } else {
       tokens = await _channel.invokeMethod(
@@ -83,14 +79,6 @@ class OktaOidcFlutter {
     }
 
     return await _channel.invokeMethod("SIGN_OUT") as bool;
-  }
-
-  /// Check if app is already Authenticated
-  Future<bool> isAuthenticated() async {
-    if (_isInitialized == false) {
-      throw Exception("Cannot sign in before initializing Okta SDK");
-    }
-    return await _channel.invokeMethod("IS_AUTHENTICATED") as bool;
   }
 
   Future<Map>? forgotPassword(String userName, String domainUrl) async {

@@ -46,19 +46,10 @@ class _MyAppState extends State<MyApp> {
                       await OktaOidcFlutter.instance.signInWithCredentials(
                     email: 'gokul.krishnan@tifin.com',
                     password: 'tPEGc96\$tT!7z',
-                    domainUrl: 'https://dev-24779440.okta.com/',
                   );
-                  print(token);
+                  print(token.accessToken);
                 },
                 child: const Text('Sign In'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  bool isAuthenticated =
-                      await OktaOidcFlutter.instance.isAuthenticated();
-                  print(isAuthenticated);
-                },
-                child: const Text('Is Authenticated'),
               ),
               TextButton(
                 onPressed: () async {

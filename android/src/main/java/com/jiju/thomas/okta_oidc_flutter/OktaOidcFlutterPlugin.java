@@ -76,14 +76,12 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 HashMap<String, String> argMap = new HashMap<String, String>((Map<String, String>) arguments.get(0));
                 final String email = argMap.get("email");
                 final String password = argMap.get("password");
-                final String orgDomain = argMap.get("orgDomain");
-                Auth.signInWithCredentials(email, password, orgDomain, result);
+                assert password != null;
+                assert email != null;
+                Authentication.INSTANCE.signInWithCredentials(email,password,result);
                 break;
             case AvailableMethods.SIGN_OUT:
-                Auth.signOut(mainActivity, result);
-                break;
-            case AvailableMethods.IS_AUTHENTICATED:
-                Auth.isAuthenticated(result);
+                Authentication.INSTANCE.logout(result);
                 break;
             case AvailableMethods.WEB_SIGN_IN:
                 ArrayList argument = (ArrayList) call.arguments;
@@ -103,15 +101,14 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 HashMap<String, String> registerUserArgMap = new HashMap<String, String>((Map<String, String>) registerUserArguments.get(0));
                 final String registerEmail = registerUserArgMap.get("email");
                 final String registerPassword = registerUserArgMap.get("password");
-                Authentication idxAuth = new Authentication();
-                idxAuth.registerUserWithCredentials(registerEmail,registerPassword,result);
+
+                Authentication.INSTANCE.registerUserWithCredentials(registerEmail,registerPassword,result);
                 break;
             case AvailableMethods.REGISTER_WITH_GOOGLE:
                 ArrayList registerWithGoogleArguments = (ArrayList) call.arguments;
                 HashMap<String, String> registerWithGoogleArgMap = new HashMap<String, String>((Map<String, String>) registerWithGoogleArguments.get(0));
                 final String googleIDP = registerWithGoogleArgMap.get("idp");
-                Authentication idxAuthentication = new Authentication();
-                idxAuthentication.registerUserWithGoogle(googleIDP,result);
+                Authentication.INSTANCE.registerUserWithGoogle(googleIDP,result);
                 break;
             default:
                 result.notImplemented();

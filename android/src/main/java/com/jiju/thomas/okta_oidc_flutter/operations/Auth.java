@@ -23,12 +23,6 @@ import io.flutter.plugin.common.MethodChannel;
 
 public class Auth {
 
-    public static void signInWithCredentials(String email, String password, String orgDomain, MethodChannel.Result result) {
-        final SignIn signIn = new SignIn();
-        signIn.withCredentials(email, password, orgDomain, result);
-    }
-
-
     public static void signInWithBrowser(String idp, Activity activity, MethodChannel.Result result) {
         SignIn signIn = new SignIn();
         signIn.withBrowser(idp, activity, result);
