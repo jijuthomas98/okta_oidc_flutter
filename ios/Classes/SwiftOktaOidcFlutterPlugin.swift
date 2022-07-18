@@ -4,6 +4,8 @@ import OktaOidc
 import OktaAuthSdk
 
 
+
+@available(iOS 13.0, *)
 public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
     let availableMethods: AvailableMethods = AvailableMethods()
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -84,14 +86,25 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
             });
             break
         case "WEB_SIGN_IN":
-            availableMethods.signInWithBrowser(callback: {token,error  in
+            guard let creds: Dictionary = call.arguments as? [String: Any] else {
+                result(-1);
+                return;
+            }
+            let idp: String = creds["idp"]! as! String;
+            let isLogin: Bool = creds["isLogin"]! as! Bool;
+            
+            availableMethods.signInWithBrowser(
+                callback: {token,error  in
                 if(error != nil) {
                     let flutterError: FlutterError = FlutterError(code: "Web_In_Error", message: error?.localizedDescription, details: error.debugDescription);
                     result(flutterError);
                     return
                 }
                 result(token);
-            });
+            },
+                isLogin: isLogin,
+                idp: idp
+            );
             break
         case "FORGOT_PASSWORD":
             guard let creds: Dictionary = call.arguments as? [String: String] else {

@@ -10,10 +10,18 @@ import OktaOidc
 import OktaAuthSdk
 import OktaIdx
 import UIKit
+import AuthenticationServices
 
+
+@available(iOS 13.0, *)
 class AvailableMethods{
     var oktaOidc: OktaOidc?
     var authStateManager: OktaOidcStateManager?
+    
+    var idxFlow: InteractionCodeFlow?
+    
+    private weak var presentationContext: ASWebAuthenticationPresentationContextProviding?
+    private var webAuthSession: ASWebAuthenticationSession?
     
     
     func isAuthenticated(callback: ((Bool) -> (Void))?) {
@@ -31,81 +39,40 @@ class AvailableMethods{
         guard let oktaOidc = oktaOidc else {
             return
         }
-        guard let authStateManager = authStateManager else {
-            return
-        }
+        
         
         let flow = InteractionCodeFlow(
-                   issuer: URL(string: oktaOidc.configuration.issuer)!,
-                   clientId: oktaOidc.configuration.clientId,
-                   scopes: oktaOidc.configuration.scopes,
-                   redirectUri: oktaOidc.configuration.redirectUri)
-               
+            issuer: URL(string: oktaOidc.configuration.issuer)!,
+            clientId: oktaOidc.configuration.clientId,
+            scopes: oktaOidc.configuration.scopes,
+            redirectUri: oktaOidc.configuration.redirectUri)
+        
         
         flow.start { result in
-                   switch result {
-                   case .success(let response):
-                       if(response.isLoginSuccessful){
-                           do{
-                               guard let remedition = response.remediations[.cancel] else{
-                                   return
-                               }
-                               remedition.proceed { remeditionResponse in
-                                   switch remeditionResponse {
-                                   case .success(_):
-                                       callback(nil)
-                                       
-                                   case .failure(let failureResponse):
-                                       callback(failureResponse)
-                                       
-                                   }
-                               }
-                           }
-                       }
-                   case .failure(let error):
-                       callback(error)
-                   }
-               }
-        
-        
-        let errorInValidatingIDToken : Error? = authStateManager.validateToken(idToken: authStateManager.idToken)
-        
-        if(errorInValidatingIDToken == nil){
-            let viewContdroller: UIViewController =
-            (UIApplication.shared.delegate?.window??.rootViewController)!;
-            if #available(iOS 13,*) {
-                self.oktaOidc!.configuration.noSSO = true
+            switch result {
+            case .success(let response):
+                if(response.isLoginSuccessful){
+                    do{
+                        guard let remedition = response.remediations[.cancel] else{
+                            return
+                        }
+                        remedition.proceed { remeditionResponse in
+                            switch remeditionResponse {
+                            case .success(_):
+                                callback(nil)
+                                
+                            case .failure(let failureResponse):
+                                callback(failureResponse)
+                                
+                            }
+                        }
+                    }
+                }
+            case .failure(let error):
+                callback(error)
             }
-            self.oktaOidc!.signOutOfOkta(authStateManager, from: viewContdroller, callback: { [weak self] error in
-                if(error != nil){
-                    callback(error)
-                    return
-                }
-                authStateManager.revoke(authStateManager.accessToken) { response, error in
-                    if error != nil {
-                        callback(error)
-                        return
-                    }
-                }
-                authStateManager.revoke(authStateManager.refreshToken)  { response, error in
-                    if error != nil {
-                        callback(error)
-                        return
-                    }
-                }
-                
-                self?.authStateManager = nil
-                self?.authStateManager?.clear()
-                callback(nil);
-                
-            })
-            
         }
-        else{
-            self.authStateManager = nil
-            self.authStateManager?.clear()
-            callback(nil);
-        }
+        
     }
     
     func initOkta(configuration: [String:String], callback: ((Error?) -> (Void))) {
@@ -124,24 +91,82 @@ class AvailableMethods{
     }
     
     func signInWithCreds(Username: String!, Password: String!, callback: @escaping (([String:String]?,Error?) -> Void)){
-        guard let oktaOidc = oktaOidc else {
+        print("inside")
+        guard oktaOidc != nil else {
             return
         }
-        do{
-            self.authStateManager = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)
-            let domainUrl: URL = URL(string: oktaOidc.configuration.issuer)!
-            //Okta Auth SDK - Session Id
-            
-            OktaAuthSdk.authenticate(with: domainUrl, username: Username, password: Password,  onStatusChange: { authStatus in
-                self.handleStatus(status: authStatus, callback:  callback)
-            },
-                                     onError: { error in
-                callback(nil,error)
-            });
-            
-            
+        
+        let flow = InteractionCodeFlow(
+            issuer: URL(string: oktaOidc!.configuration.issuer)!,
+            clientId: oktaOidc!.configuration.clientId,
+            scopes: oktaOidc!.configuration.scopes,
+            redirectUri: oktaOidc!.configuration.redirectUri)
+    
+        
+        flow.start { result in
+            switch result {
+            case .success(let response):
+                guard let remediation = response.remediations[.identify],
+                      let usernameField = remediation["identifier"],
+                      let rememberMeField = remediation["rememberMe"]
+                else {
+                    return
+                }
+                usernameField.value = Username
+                rememberMeField.value = false
+                
+                remediation.proceed { remediationResponse in
+                    switch remediationResponse {
+                    case .success(let successResponse):
+                        guard let remediation = successResponse.remediations[.challengeAuthenticator],
+                              let passwordField = remediation["credentials.passcode"]
+                        else {
+                            return
+                        }
+                        
+                        passwordField.value = Password
+                        
+                        remediation.proceed { passwordResponse in
+                            switch passwordResponse {
+                            case .success(let successPasswordResponse):
+                                print(successPasswordResponse)
+                                guard successPasswordResponse.isLoginSuccessful
+                                else {
+                                    return
+                                }
+                                successPasswordResponse.exchangeCode { tokenResult in
+                                    switch tokenResult{
+                                    case .success(let tokenResponse):
+                                        let tokens = tokenResponse
+                                        callback([
+                                            "accessToken": tokens.accessToken,
+                                            "userId":tokens.id
+                                        ],nil)
+                                    case .failure(let error):
+                                        callback(nil, error)
+                                    }
+                                }
+                            case .failure(let failurePasswordResponse):
+                                print(failurePasswordResponse)
+                                
+                                
+                            }
+                        }
+                        
+                        
+                        
+                    case .failure(let failureResponse):
+                        callback(nil, failureResponse)
+                    }
+                }
+                
+            case .failure(let error):
+                callback(nil, error)
+                
+            }
         }
     }
+    
     
     func registerWithCreds(Username: String!, Password: String!, callback: @escaping (([String:String]?,Error?) -> Void)){
         guard let oktaOidc = oktaOidc else {
@@ -183,35 +208,54 @@ class AvailableMethods{
     }
     
     
-    func signInWithBrowser(callback: @escaping (([String:String]?,Error?) -> Void)) {
+    func signInWithBrowser(callback: @escaping (([String:String]?,Error?) -> Void), isLogin: Bool, idp: String) {
         let viewController: UIViewController =
         (UIApplication.shared.delegate?.window??.rootViewController)!;
         guard let oktaOidc = oktaOidc else {
             return
         }
-        if #available(iOS 13,*) {
+        
+        if #available(iOS 13.0, *) {
             oktaOidc.configuration.noSSO = true
         }
-        oktaOidc.signInWithBrowser(from: viewController, callback: { [weak self] authStateManager, error in
-            if let error = error {
-                self?.authStateManager = nil
+        
+        let flow = InteractionCodeFlow(
+            issuer: URL(string: oktaOidc.configuration.issuer)!,
+            clientId: oktaOidc.configuration.clientId,
+            scopes: oktaOidc.configuration.scopes,
+            redirectUri: oktaOidc.configuration.redirectUri)
+        
+        flow.start { result in
+            switch result {
+            case .success(let response):
+                var socialRemedation: Remediation?
                 
+                response.remediations.forEach { item in
+                    if(item.capabilities.isEmpty){
+                        return
+                    }
+                    if(item.socialIdp?.id == idp){
+                        socialRemedation = item
+                    }
+                }
+                
+                guard let remediation = socialRemedation else {
+                    return
+                }
+                let  socialCapabilites = remediation.socialIdp
+                
+                self.webLogin(url: socialCapabilites!.redirectUrl)
+                
+            case .failure(let error):
                 callback(nil, error)
-                return
+                
             }
-            
-            self?.authStateManager = authStateManager!
-            callback(
-                [
-                    "accessToken": authStateManager!.accessToken!
-                ], nil)
-            
-        })
+        }
+        
     }
     
     
     func getUser(callback: @escaping ((String?, Error?)-> (Void))) {
-        
         authStateManager?.getUser { response, error in
             guard let response = response else {
                 let alert = UIAlertController(title: "Error", message: error?.localizedDescription, preferredStyle: .alert)
@@ -315,7 +359,7 @@ class AvailableMethods{
                         remediation.proceed { authOptionResult in
                             switch authOptionResult{
                             case .success(let authOptionResponse):
-                            
+                                
                                 guard let remediation = authOptionResponse.remediations[.enrollAuthenticator],
                                       let passcode = remediation["credentials.passcode"]
                                 else{
@@ -377,5 +421,61 @@ class AvailableMethods{
             }
         }
         
+    }
+    
+    func webLogin(url:URL) {
+        
+        // Retrieve the Redirect URL scheme from our configuration, to
+        // supply it to the ASWebAuthenticationSession instance.
+        guard let client = oktaOidc
+        else {
+            
+            return
+        }
+        
+        // Create an ASWebAuthenticationSession to trigger the IDP OAuth2 flow.
+        let session = ASWebAuthenticationSession(url: url,
+                                                 callbackURLScheme: client.configuration.redirectUri.scheme)
+        { [weak self] (callbackURL, error) in
+
+            guard error == nil,
+                  let callbackURL = callbackURL,
+                  let client = self!.oktaOidc                else {
+                //                    self?.finish(with: error)
+                return
+            }
+            
+            // Start and present the web authentication session.
+            // Ask the IDXClient for what the result of the social login was.
+            let result = self!.idxFlow!.redirectResult(for: callbackURL)
+            
+            switch result {
+            case .authenticated:
+                // When the social login result is `authenticated`, use the
+                // IDXClient to exchange the callback URL returned from
+                // ASWebAuthenticationSession with an Okta token.
+                self!.idxFlow!.exchangeCode(redirect: callbackURL) { result in
+                    switch result{
+                    case .success(let token):
+                        print(token)
+                    case .failure(let error):
+                        print(error)
+                    }
+                }
+                
+            case .invalidContext,.invalidRedirectUrl,.remediationRequired:
+                print("INVAILD")
+                
+            }
+        }
+        
+        
+        if #available(iOS 13.0, *) {
+            session.presentationContextProvider = presentationContext
+            session.prefersEphemeralWebBrowserSession = true
+        }
+        session.start()
+        
+        self.webAuthSession = session
     }
 }
