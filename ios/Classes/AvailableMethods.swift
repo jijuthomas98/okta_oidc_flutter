@@ -36,22 +36,36 @@ class AvailableMethods{
         }
         
         let flow = InteractionCodeFlow(
-            issuer: URL(string: oktaOidc.configuration.issuer)!,
-            clientId: oktaOidc.configuration.clientId,
-            scopes: oktaOidc.configuration.scopes,
-            redirectUri: oktaOidc.configuration.redirectUri)
+                   issuer: URL(string: oktaOidc.configuration.issuer)!,
+                   clientId: oktaOidc.configuration.clientId,
+                   scopes: oktaOidc.configuration.scopes,
+                   redirectUri: oktaOidc.configuration.redirectUri)
+               
         
         flow.start { result in
-            switch result {
-            case .success(let response):
-                if(response.isLoginSuccessful ){
-                   let res = response.remediations[.cancel]
-                    response.cancel()
-                }
-            case .failure(let error):
-                callback(error)
-            }
-        }
+                   switch result {
+                   case .success(let response):
+                       if(response.isLoginSuccessful){
+                           do{
+                               guard let remedition = response.remediations[.cancel] else{
+                                   return
+                               }
+                               remedition.proceed { remeditionResponse in
+                                   switch remeditionResponse {
+                                   case .success(_):
+                                       callback(nil)
+                                       
+                                   case .failure(let failureResponse):
+                                       callback(failureResponse)
+                                       
+                                   }
+                               }
+                           }
+                       }
+                   case .failure(let error):
+                       callback(error)
+                   }
+               }
         
         
         let errorInValidatingIDToken : Error? = authStateManager.validateToken(idToken: authStateManager.idToken)
