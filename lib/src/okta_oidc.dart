@@ -93,13 +93,6 @@ class OktaOidcFlutter {
     return await _channel.invokeMethod("IS_AUTHENTICATED") as bool;
   }
 
-  Future<bool> register() async {
-    if (_isInitialized == false) {
-      throw Exception("Cannot sign in before initializing Okta SDK");
-    }
-    return await _channel.invokeMethod("REGISTER") as bool;
-  }
-
   Future<Map>? forgotPassword(String userName, String domainUrl) async {
     if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
@@ -120,10 +113,21 @@ class OktaOidcFlutter {
   }
 
   Future<OktaTokens> registerWithCreds(String email, String password) async {
-    var tokens = await _channel.invokeMethod("REGISTER_WITH_CREDENTIAL", {
-      "email": email,
-      "password": password,
-    });
+    // ignore: prefer_typing_uninitialized_variables
+    var tokens;
+    if (Platform.isAndroid) {
+      tokens = await _channel.invokeMethod("REGISTER_WITH_CREDENTIAL", [
+        {
+          "email": email,
+          "password": password,
+        }
+      ]);
+    } else {
+      tokens = await _channel.invokeMethod("REGISTER_WITH_CREDENTIAL", {
+        "email": email,
+        "password": password,
+      });
+    }
 
     return OktaTokens.parse(tokens);
   }

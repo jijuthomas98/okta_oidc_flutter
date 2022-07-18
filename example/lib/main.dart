@@ -79,7 +79,7 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () async {
                   OktaTokens token =
                       await OktaOidcFlutter.instance.registerWithCreds(
-                    'gokul.krishnanoooodo@tifin.com',
+                    'jiju.thomas98787989@tifin.com',
                     'tPEGc96\$tT!7z',
                   );
                   print(token.accessToken);
