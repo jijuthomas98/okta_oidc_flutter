@@ -77,9 +77,16 @@ class _MyAppState extends State<MyApp> {
               ),
               TextButton(
                 onPressed: () async {
+                  await OktaOidcFlutter.instance
+                      .registerWithGoogle('0oa5o7sccuy5YgrIz5d7');
+                },
+                child: const Text('Register with google'),
+              ),
+              TextButton(
+                onPressed: () async {
                   OktaTokens token =
                       await OktaOidcFlutter.instance.registerWithCreds(
-                    'jiju.thomas98787989@tifin.com',
+                    'jiju.thomas987879asasas89@tifin.com',
                     'tPEGc96\$tT!7z',
                   );
                   print(token.accessToken);

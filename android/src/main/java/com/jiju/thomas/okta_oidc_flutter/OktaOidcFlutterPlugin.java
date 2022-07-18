@@ -103,10 +103,15 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 HashMap<String, String> registerUserArgMap = new HashMap<String, String>((Map<String, String>) registerUserArguments.get(0));
                 final String registerEmail = registerUserArgMap.get("email");
                 final String registerPassword = registerUserArgMap.get("password");
-
                 Authentication idxAuth = new Authentication();
                 idxAuth.registerUserWithCredentials(registerEmail,registerPassword,result);
-
+                break;
+            case AvailableMethods.REGISTER_WITH_GOOGLE:
+                ArrayList registerWithGoogleArguments = (ArrayList) call.arguments;
+                HashMap<String, String> registerWithGoogleArgMap = new HashMap<String, String>((Map<String, String>) registerWithGoogleArguments.get(0));
+                final String googleIDP = registerWithGoogleArgMap.get("idp");
+                Authentication idxAuthentication = new Authentication();
+                idxAuthentication.registerUserWithGoogle(googleIDP,result);
                 break;
             default:
                 result.notImplemented();

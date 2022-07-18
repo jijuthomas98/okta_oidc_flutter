@@ -22,17 +22,26 @@ class Authentication {
         }
     }
 
+    fun registerUserWithGoogle(idp: String, methodChannelResult: MethodChannel.Result) {
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        scope.launch {
+            scope.launch {
+                createCoroutineClient("", "", methodChannelResult)
+            }
+        }
+    }
+
     private suspend fun createCoroutineClient(
         email: String,
         password: String,
-        result: MethodChannel.Result
+        methodChannelResult: MethodChannel.Result
     ) {
         when (
             val clientResult = CredentialBootstrap.oidcClient.createIdxFlow(
                 redirectUrl = OktaClient.getInstance().config.redirectUri.toString(),
             )) {
             is OidcClientResult.Error -> {
-                result.error(
+                methodChannelResult.error(
                     "OIDC CLIENT INIT FAILED",
                     clientResult.exception.message,
                     clientResult.exception.cause?.message
@@ -44,7 +53,7 @@ class Authentication {
                 flow = clientResult.result
                 when (val resumeResult = clientResult.result.resume()) {
                     is OidcClientResult.Error -> {
-                        result.error(
+                        methodChannelResult.error(
                             "RESUME FAILED",
                             resumeResult.exception.message,
                             resumeResult.exception.cause?.message
@@ -53,14 +62,67 @@ class Authentication {
                     }
 
                     is OidcClientResult.Success -> {
-                        handleResponse(resumeResult.result, email, password, result)
+                        if (email.isNotEmpty() && password.isNotEmpty()) {
+                            handleRegisterWithCredentialsResponse(
+                                resumeResult.result,
+                                email,
+                                password,
+                                methodChannelResult
+                            )
+                        } else {
+                            println("SOCIAL LOGIN")
+                        }
                     }
                 }
             }
         }
     }
 
-    private suspend fun handleResponse(
+
+    private suspend fun handleRegisterWithGoogleResponse(
+
+        idp: String,
+        response: IdxResponse,
+        methodChannelResult: MethodChannel.Result
+
+    ) {
+        if (response.isLoginSuccessful) {
+            when (val result =
+                flow?.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
+                is OidcClientResult.Error -> {
+                    methodChannelResult.error(
+                        "TOKEN ERROR",
+                        result.exception.message,
+                        result.exception.cause?.message
+                    )
+                    return
+                }
+
+                is OidcClientResult.Success -> {
+                    CredentialBootstrap.defaultCredential().storeToken(result.result)
+                    val tokenMap = mapOf(
+                        "accessToken" to result.result.accessToken,
+                        "userId" to result.result.idToken!!
+                    )
+                    methodChannelResult.success(tokenMap)
+                    return
+
+                }
+                else -> {
+                    handleRegisterWithGoogleResponse(
+                        idp,
+                        response,
+                        methodChannelResult
+                    )
+                }
+            }
+            return
+        }
+
+        for ()
+    }
+
+    private suspend fun handleRegisterWithCredentialsResponse(
         response: IdxResponse,
         email: String,
         password: String,
@@ -89,7 +151,12 @@ class Authentication {
 
                 }
                 else -> {
-                    handleResponse(response, email, password, methodChannelResult)
+                    handleRegisterWithCredentialsResponse(
+                        response,
+                        email,
+                        password,
+                        methodChannelResult
+                    )
                 }
             }
             return
@@ -121,7 +188,11 @@ class Authentication {
                             flow?.proceed(enrollProfileRemediation)) {
 
                             is OidcClientResult.Error -> {
-                                methodChannelResult.error("ENROLL_PROFILE FAILED",enrollProfileResponse.exception.message,enrollProfileResponse.exception.cause?.message)
+                                methodChannelResult.error(
+                                    "ENROLL_PROFILE FAILED",
+                                    enrollProfileResponse.exception.message,
+                                    enrollProfileResponse.exception.cause?.message
+                                )
                                 return
                             }
 
@@ -129,7 +200,11 @@ class Authentication {
                             is OidcClientResult.Success -> {
                                 for (rem in enrollProfileResponse.result.remediations) {
                                     if (rem.type != IdxRemediation.Type.SELECT_AUTHENTICATOR_ENROLL) {
-                                        methodChannelResult.error("USER ALREADY REGISTERED","enrollProfileResponse failed", "enrollProfileResponse")
+                                        methodChannelResult.error(
+                                            "USER ALREADY REGISTERED",
+                                            "enrollProfileResponse failed",
+                                            "enrollProfileResponse"
+                                        )
                                         return
 
                                     }
@@ -138,7 +213,9 @@ class Authentication {
                                         enrollProfileResponse.result.remediations[IdxRemediation.Type.SELECT_AUTHENTICATOR_ENROLL]
 
                                     val authenticationOption =
-                                        selectAuthenticatorEnrollRemediation?.form?.get("authenticator")?.options?.get(0)
+                                        selectAuthenticatorEnrollRemediation?.form?.get("authenticator")?.options?.get(
+                                            0
+                                        )
                                     if (selectAuthenticatorEnrollRemediation != null) {
                                         selectAuthenticatorEnrollRemediation.form["authenticator"]?.selectedOption =
                                             authenticationOption
@@ -146,7 +223,11 @@ class Authentication {
                                         when (val selectAuthenticatorEnrollResponse =
                                             flow?.proceed(selectAuthenticatorEnrollRemediation)) {
                                             is OidcClientResult.Error -> {
-                                                methodChannelResult.error("SELECT_AUTHENTICATOR_ENROLL FAILED",selectAuthenticatorEnrollResponse.exception.message,selectAuthenticatorEnrollResponse.exception.cause?.message)
+                                                methodChannelResult.error(
+                                                    "SELECT_AUTHENTICATOR_ENROLL FAILED",
+                                                    selectAuthenticatorEnrollResponse.exception.message,
+                                                    selectAuthenticatorEnrollResponse.exception.cause?.message
+                                                )
                                                 return
                                             }
 
@@ -161,7 +242,11 @@ class Authentication {
                                                     when (val passcodeResponse =
                                                         flow?.proceed(remediation)) {
                                                         is OidcClientResult.Error -> {
-                                                            methodChannelResult.error("ENROLL_AUTHENTICATOR FAILED",passcodeResponse.exception.message,passcodeResponse.exception.cause?.message)
+                                                            methodChannelResult.error(
+                                                                "ENROLL_AUTHENTICATOR FAILED",
+                                                                passcodeResponse.exception.message,
+                                                                passcodeResponse.exception.cause?.message
+                                                            )
                                                             return
                                                         }
                                                         is OidcClientResult.Success -> {
@@ -171,7 +256,11 @@ class Authentication {
                                                                 when (val skipResponse =
                                                                     flow?.proceed(skipRemediation)) {
                                                                     is OidcClientResult.Error -> {
-                                                                        methodChannelResult.error("SKIP FAILED",skipResponse.exception.message,skipResponse.exception.cause?.message)
+                                                                        methodChannelResult.error(
+                                                                            "SKIP FAILED",
+                                                                            skipResponse.exception.message,
+                                                                            skipResponse.exception.cause?.message
+                                                                        )
                                                                         return
                                                                     }
                                                                     is OidcClientResult.Success -> {

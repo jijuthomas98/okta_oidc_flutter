@@ -16,7 +16,6 @@ import java.util.concurrent.Executors;
 
 import io.flutter.plugin.common.MethodChannel;
 
-
 public class ConfigOktaClient {
     public static void create(OktaRequestParameters arg, Context context, MethodChannel.Result result) {
         try {
