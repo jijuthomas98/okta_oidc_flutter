@@ -43,7 +43,7 @@ public class OktaRequestParameters {
     }
 
     public String getScopes() {
-        return String.join(" ",scopes);
+        return String.join(" ", scopes);
     }
 
     public Boolean getRequireHardwareBackedKeyStore() {

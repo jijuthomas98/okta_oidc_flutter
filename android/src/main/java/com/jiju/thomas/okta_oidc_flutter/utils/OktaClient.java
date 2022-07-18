@@ -10,38 +10,40 @@ public class OktaClient {
     private AuthClient authClient = null;
     private static OktaClient oktaInstance = null;
 
-    private OktaClient(OIDCConfig config, WebAuthClient webAuthClient,AuthClient authClient){
+    private OktaClient(OIDCConfig config, WebAuthClient webAuthClient, AuthClient authClient) {
         this.config = config;
         this.webAuthClient = webAuthClient;
         this.authClient = authClient;
     }
 
-    public static OktaClient getInstance(){
-        if(oktaInstance == null){
+    public static OktaClient getInstance() {
+        if (oktaInstance == null) {
             return null;
         }
         return oktaInstance;
     }
 
-    public synchronized static void init(OIDCConfig config, WebAuthClient webAuthClient, AuthClient authClient){
-        if(oktaInstance != null){
+    public synchronized static void init(OIDCConfig config, WebAuthClient webAuthClient, AuthClient authClient) {
+        if (oktaInstance != null) {
             return;
         }
-        oktaInstance = new OktaClient(config,webAuthClient,authClient);
+        oktaInstance = new OktaClient(config, webAuthClient, authClient);
     }
 
     public OIDCConfig getConfig() {
-        if(oktaInstance == null) throw new IllegalStateException(Errors.notConfigured);
+        if (oktaInstance == null) throw new IllegalStateException(Errors.notConfigured);
         return this.config;
     }
 
     public WebAuthClient getWebAuthClient() {
-        if(oktaInstance == null && webAuthClient == null) throw new IllegalStateException(Errors.notConfigured);
+        if (oktaInstance == null && webAuthClient == null)
+            throw new IllegalStateException(Errors.notConfigured);
         return this.webAuthClient;
     }
 
     public AuthClient getAuthClient() {
-        if(oktaInstance == null && authClient == null) throw new IllegalStateException(Errors.notConfigured);
+        if (oktaInstance == null && authClient == null)
+            throw new IllegalStateException(Errors.notConfigured);
         return this.authClient;
     }
 }
