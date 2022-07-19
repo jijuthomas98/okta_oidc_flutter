@@ -1,15 +1,23 @@
 package com.jiju.thomas.okta_oidc_flutter.idxOperations
 
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.lifecycle.ViewModel
 import com.okta.authfoundation.client.OidcClientResult
 import com.okta.authfoundation.credential.RevokeTokenType
 import com.okta.authfoundationbootstrap.CredentialBootstrap
 import com.okta.idx.kotlin.client.IdxFlow
+import com.okta.idx.kotlin.client.IdxFlow.Companion.createIdxFlow
+import com.okta.idx.kotlin.client.IdxRedirectResult
+import com.okta.idx.kotlin.dto.IdxIdpCapability
 import com.okta.idx.kotlin.dto.IdxRemediation
 import com.okta.idx.kotlin.dto.IdxResponse
 import io.flutter.plugin.common.MethodChannel
 
-object AuthenticationImpl {
+object AuthenticationImpl : ViewModel() {
 
     suspend fun handleLogout(methodChannelResult: MethodChannel.Result) {
         when (val revokeTokenResponse =
@@ -27,7 +35,7 @@ object AuthenticationImpl {
         }
     }
 
-     suspend fun handleSignInWithCredentials(
+    suspend fun handleSignInWithCredentials(
         response: IdxResponse,
         email: String,
         password: String,
@@ -38,7 +46,7 @@ object AuthenticationImpl {
 
         if (response.isLoginSuccessful) {
             when (val result =
-                flow?.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
+                flow.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
                 is OidcClientResult.Error -> {
                     methodChannelResult.error(
                         "TOKEN ERROR",
@@ -62,7 +70,7 @@ object AuthenticationImpl {
                         response,
                         email,
                         password,
-                        methodChannelResult,flow
+                        methodChannelResult, flow
                     )
                 }
             }
@@ -75,7 +83,7 @@ object AuthenticationImpl {
                 val rememberThisDevice = remediation["rememberMe"]
                 userName?.value = email
                 rememberThisDevice?.value = true
-                when (val identifyResponse = flow?.proceed(remediation)) {
+                when (val identifyResponse = flow.proceed(remediation)) {
                     is OidcClientResult.Error -> {
 
                     }
@@ -91,14 +99,14 @@ object AuthenticationImpl {
                         }
                         if (challengeAuthenticatorRemediation != null) {
                             when (val challengeAuthenticatorResponse =
-                                flow?.proceed(challengeAuthenticatorRemediation)) {
+                                flow.proceed(challengeAuthenticatorRemediation)) {
                                 is OidcClientResult.Error -> {
 
                                 }
                                 is OidcClientResult.Success -> {
                                     if (challengeAuthenticatorResponse.result.isLoginSuccessful) {
                                         when (val tokenResponse =
-                                            flow?.exchangeInteractionCodeForTokens(
+                                            flow.exchangeInteractionCodeForTokens(
                                                 challengeAuthenticatorResponse.result.remediations[IdxRemediation.Type.ISSUE]!!
                                             )) {
                                             is OidcClientResult.Error -> {
@@ -111,7 +119,8 @@ object AuthenticationImpl {
                                             }
 
                                             is OidcClientResult.Success -> {
-                                                CredentialBootstrap.defaultCredential().storeToken(tokenResponse.result)
+                                                CredentialBootstrap.defaultCredential()
+                                                    .storeToken(tokenResponse.result)
                                                 val tokenMap =
                                                     mapOf(
                                                         "accessToken" to tokenResponse.result.accessToken,
@@ -136,17 +145,17 @@ object AuthenticationImpl {
         }
     }
 
-     suspend fun handleRegisterWithCredentialsResponse(
+    suspend fun handleRegisterWithCredentialsResponse(
         response: IdxResponse,
         email: String,
         password: String,
         methodChannelResult: MethodChannel.Result,
         flow: IdxFlow?
     ) {
-        if(flow == null)return
+        if (flow == null) return
         if (response.isLoginSuccessful) {
             when (val result =
-                flow?.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
+                flow.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
                 is OidcClientResult.Error -> {
                     methodChannelResult.error(
                         "TOKEN ERROR",
@@ -170,7 +179,7 @@ object AuthenticationImpl {
                         response,
                         email,
                         password,
-                        methodChannelResult,flow
+                        methodChannelResult, flow
                     )
                 }
             }
@@ -181,7 +190,7 @@ object AuthenticationImpl {
         for (remediation in response.remediations) {
             if (remediation.type == IdxRemediation.Type.SELECT_ENROLL_PROFILE) {
                 when (val selectEnrollProfileResponse =
-                    flow?.proceed(response.remediations[IdxRemediation.Type.SELECT_ENROLL_PROFILE]!!)) {
+                    flow.proceed(response.remediations[IdxRemediation.Type.SELECT_ENROLL_PROFILE]!!)) {
                     is OidcClientResult.Error -> {
                         methodChannelResult.error(
                             "SELECT_ENROLL_PROFILE FAILED",
@@ -200,7 +209,7 @@ object AuthenticationImpl {
                             "Individual Investor"
 
                         when (val enrollProfileResponse =
-                            flow?.proceed(enrollProfileRemediation)) {
+                            flow.proceed(enrollProfileRemediation)) {
 
                             is OidcClientResult.Error -> {
                                 methodChannelResult.error(
@@ -236,7 +245,7 @@ object AuthenticationImpl {
                                             authenticationOption
 
                                         when (val selectAuthenticatorEnrollResponse =
-                                            flow?.proceed(selectAuthenticatorEnrollRemediation)) {
+                                            flow.proceed(selectAuthenticatorEnrollRemediation)) {
                                             is OidcClientResult.Error -> {
                                                 methodChannelResult.error(
                                                     "SELECT_AUTHENTICATOR_ENROLL FAILED",
@@ -247,15 +256,15 @@ object AuthenticationImpl {
                                             }
 
                                             is OidcClientResult.Success -> {
-                                                val remediation =
+                                                val enrollAuthenticatorRemediation =
                                                     selectAuthenticatorEnrollResponse.result.remediations[IdxRemediation.Type.ENROLL_AUTHENTICATOR]
                                                 val passcode =
-                                                    remediation?.get("credentials.passcode")
+                                                    enrollAuthenticatorRemediation?.get("credentials.passcode")
                                                 if (passcode != null) {
                                                     passcode.value = password
 
                                                     when (val passcodeResponse =
-                                                        flow?.proceed(remediation)) {
+                                                        flow.proceed(enrollAuthenticatorRemediation)) {
                                                         is OidcClientResult.Error -> {
                                                             methodChannelResult.error(
                                                                 "ENROLL_AUTHENTICATOR FAILED",
@@ -269,7 +278,7 @@ object AuthenticationImpl {
                                                                 passcodeResponse.result.remediations[IdxRemediation.Type.SKIP]
                                                             if (skipRemediation != null) {
                                                                 when (val skipResponse =
-                                                                    flow?.proceed(skipRemediation)) {
+                                                                    flow.proceed(skipRemediation)) {
                                                                     is OidcClientResult.Error -> {
                                                                         methodChannelResult.error(
                                                                             "SKIP FAILED",
@@ -281,7 +290,7 @@ object AuthenticationImpl {
                                                                     is OidcClientResult.Success -> {
                                                                         if (skipResponse.result.isLoginSuccessful) {
                                                                             when (val finalResponse =
-                                                                                flow?.exchangeInteractionCodeForTokens(
+                                                                                flow.exchangeInteractionCodeForTokens(
                                                                                     skipResponse.result.remediations[IdxRemediation.Type.ISSUE]!!
                                                                                 )) {
                                                                                 is OidcClientResult.Error -> {
@@ -294,7 +303,10 @@ object AuthenticationImpl {
                                                                                 }
 
                                                                                 is OidcClientResult.Success -> {
-                                                                                    CredentialBootstrap.defaultCredential().storeToken(finalResponse.result)
+                                                                                    CredentialBootstrap.defaultCredential()
+                                                                                        .storeToken(
+                                                                                            finalResponse.result
+                                                                                        )
                                                                                     val tokenMap =
                                                                                         mapOf(
                                                                                             "accessToken" to finalResponse.result.accessToken,
@@ -327,6 +339,108 @@ object AuthenticationImpl {
                         }
                     }
                     else -> {}
+                }
+            }
+        }
+    }
+
+    suspend fun handleRegisterWithGoogleResponse(
+        response: IdxResponse,
+        methodChannelResult: MethodChannel.Result,
+        context: Context, flow: IdxFlow?,
+    ) {
+        if (flow == null) return
+        if (response.isLoginSuccessful) {
+            when (val result =
+                flow.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
+                is OidcClientResult.Error -> {
+                    methodChannelResult.error(
+                        "TOKEN ERROR",
+                        result.exception.message,
+                        result.exception.cause?.message
+                    )
+                    return
+                }
+
+                is OidcClientResult.Success -> {
+                    CredentialBootstrap.defaultCredential().storeToken(result.result)
+                    val tokenMap = mapOf(
+                        "accessToken" to result.result.accessToken,
+                        "userId" to result.result.idToken!!
+                    )
+                    methodChannelResult.success(tokenMap)
+                    return
+
+                }
+                else -> {
+                    handleRegisterWithGoogleResponse(
+                        response,
+                        methodChannelResult,
+                        context, flow
+                    )
+                }
+            }
+            return
+        }
+        val redirectRemediation = response.remediations[IdxRemediation.Type.REDIRECT_IDP]
+
+        val idpCapability = redirectRemediation?.capabilities?.get<IdxIdpCapability>()
+
+
+
+
+
+        if (idpCapability != null) {
+            try {
+//                val redirectUri = Uri.parse(idpCapability.redirectUrl.toString())
+                val browserIntent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(idpCapability.redirectUrl.toString())
+                )
+                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(browserIntent)
+
+            } catch (e: ActivityNotFoundException) {
+                e.printStackTrace()
+            }
+            return
+        }
+
+        if (redirectRemediation != null) {
+            when(val response = flow?.proceed(redirectRemediation)){
+                is OidcClientResult.Error ->{
+                    methodChannelResult.error("REDIRECT_IDP FAILED",response.exception.message,response.exception.cause)
+                }
+                is OidcClientResult.Success ->{
+                    if(response.result.isLoginSuccessful){
+                        when (val tokenResponse =
+                            flow?.exchangeInteractionCodeForTokens(
+                                response.result.remediations[IdxRemediation.Type.ISSUE]!!
+                            )) {
+                            is OidcClientResult.Error -> {
+                                methodChannelResult.error(
+                                    "TOKEN ERROR",
+                                    tokenResponse.exception.message,
+                                    tokenResponse.exception.cause?.message
+                                )
+                                return
+                            }
+
+                            is OidcClientResult.Success -> {
+                                CredentialBootstrap.defaultCredential().storeToken(tokenResponse.result)
+                                val tokenMap =
+                                    mapOf(
+                                        "accessToken" to tokenResponse.result.accessToken,
+                                        "userId" to tokenResponse.result.idToken!!
+                                    )
+                                methodChannelResult.success(
+                                    tokenMap
+                                )
+                                return
+                            }
+                            else -> {}
+                        }
+                    }
                 }
             }
         }

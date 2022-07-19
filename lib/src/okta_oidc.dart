@@ -120,7 +120,7 @@ class OktaOidcFlutter {
     return OktaTokens.parse(tokens);
   }
 
-  Future<OktaTokens> registerWithGoogle(String idp) async {
+  Future<OktaTokens> registerWithGoogle() async {
     if (_isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
@@ -128,10 +128,9 @@ class OktaOidcFlutter {
 
     var tokens;
     if (Platform.isAndroid) {
-      tokens = await _channel.invokeMethod("REGISTER_WITH_GOOGLE", [
-        {"idp": idp}
-      ]);
+      tokens = await _channel.invokeMethod("REGISTER_WITH_GOOGLE");
     }
+    print(tokens);
     return OktaTokens.parse(tokens);
   }
 }

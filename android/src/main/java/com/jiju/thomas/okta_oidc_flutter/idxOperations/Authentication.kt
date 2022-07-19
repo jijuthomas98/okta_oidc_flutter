@@ -1,13 +1,15 @@
 package com.jiju.thomas.okta_oidc_flutter.idxOperations
 
-import com.jiju.thomas.okta_oidc_flutter.operations.SignIn
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient
 import com.okta.authfoundation.client.OidcClientResult
-import com.okta.authfoundation.credential.RevokeTokenType
 import com.okta.authfoundationbootstrap.CredentialBootstrap
 import com.okta.idx.kotlin.client.IdxFlow
 import com.okta.idx.kotlin.client.IdxFlow.Companion.createIdxFlow
-import com.okta.idx.kotlin.dto.IdxAuthenticator
+import com.okta.idx.kotlin.dto.IdxIdpCapability
 import com.okta.idx.kotlin.dto.IdxRemediation
 import com.okta.idx.kotlin.dto.IdxResponse
 import io.flutter.plugin.common.MethodChannel
@@ -19,18 +21,22 @@ object Authentication {
     private var flow: IdxFlow? = null
 
 
-    fun registerUserWithCredentials(email: String, password: String, result: MethodChannel.Result) {
+    fun registerUserWithCredentials(
+        email: String,
+        password: String,
+        methodChannelResult: MethodChannel.Result,context: Context
+    ) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient(email, password, result, false)
+            createCoroutineClient(email, password,  methodChannelResult, false,context)
         }
     }
 
-    fun registerUserWithGoogle(idp: String, methodChannelResult: MethodChannel.Result) {
+    fun registerUserWithGoogle(methodChannelResult: MethodChannel.Result,context: Context) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
             scope.launch {
-                createCoroutineClient("", "", methodChannelResult, false)
+                createCoroutineClient("", "", methodChannelResult, false,context)
             }
         }
     }
@@ -38,19 +44,18 @@ object Authentication {
     fun signInWithCredentials(
         email: String,
         password: String,
-        methodChannelResult: MethodChannel.Result
+        methodChannelResult: MethodChannel.Result,context: Context
     ) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
             scope.launch {
-                createCoroutineClient(email, password, methodChannelResult, true)
+                createCoroutineClient(email, password,  methodChannelResult, true,context)
             }
         }
     }
 
 
-
-    fun logout(methodChannelResult: MethodChannel.Result){
+    fun logout(methodChannelResult: MethodChannel.Result) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
             scope.launch {
@@ -63,8 +68,10 @@ object Authentication {
     private suspend fun createCoroutineClient(
         email: String,
         password: String,
+
         methodChannelResult: MethodChannel.Result,
         isSignIn: Boolean,
+        context: Context
     ) {
 
         when (
@@ -100,7 +107,7 @@ object Authentication {
                                 resumeResult.result,
                                 email,
                                 password,
-                                methodChannelResult,flow
+                                methodChannelResult, flow
                             )
                         } else if (email.isNotEmpty() && password.isNotEmpty() && isSignIn) {
 
@@ -111,54 +118,16 @@ object Authentication {
                                 methodChannelResult, flow
                             )
                         } else {
-                            //handle register user with google
+                           AuthenticationImpl.handleRegisterWithGoogleResponse(
+                                resumeResult.result,
+                                methodChannelResult,
+                                context, flow
+                            )
                         }
                     }
                 }
             }
         }
-    }
-
-
-    private suspend fun handleRegisterWithGoogleResponse(
-        idp: String,
-        response: IdxResponse,
-        methodChannelResult: MethodChannel.Result,
-    ) {
-        if (response.isLoginSuccessful) {
-            when (val result =
-                flow?.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
-                is OidcClientResult.Error -> {
-                    methodChannelResult.error(
-                        "TOKEN ERROR",
-                        result.exception.message,
-                        result.exception.cause?.message
-                    )
-                    return
-                }
-
-                is OidcClientResult.Success -> {
-                    CredentialBootstrap.defaultCredential().storeToken(result.result)
-                    val tokenMap = mapOf(
-                        "accessToken" to result.result.accessToken,
-                        "userId" to result.result.idToken!!
-                    )
-                    methodChannelResult.success(tokenMap)
-                    return
-
-                }
-                else -> {
-                    handleRegisterWithGoogleResponse(
-                        idp,
-                        response,
-                        methodChannelResult
-                    )
-                }
-            }
-            return
-        }
-
-
     }
 }
 

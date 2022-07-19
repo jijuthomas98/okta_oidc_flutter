@@ -54,7 +54,6 @@ class _MyAppState extends State<MyApp> {
               TextButton(
                 onPressed: () async {
                   bool result = await OktaOidcFlutter.instance.signOut();
-
                   print(result);
                 },
                 child: const Text('Sign Out'),
@@ -68,8 +67,7 @@ class _MyAppState extends State<MyApp> {
               ),
               TextButton(
                 onPressed: () async {
-                  await OktaOidcFlutter.instance
-                      .registerWithGoogle('0oa5o7sccuy5YgrIz5d7');
+                  await OktaOidcFlutter.instance.registerWithGoogle();
                 },
                 child: const Text('Register with google'),
               ),

@@ -78,7 +78,7 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 final String password = argMap.get("password");
                 assert password != null;
                 assert email != null;
-                Authentication.INSTANCE.signInWithCredentials(email,password,result);
+                Authentication.INSTANCE.signInWithCredentials(email,password,result,context);
                 break;
             case AvailableMethods.SIGN_OUT:
                 Authentication.INSTANCE.logout(result);
@@ -102,13 +102,10 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 final String registerEmail = registerUserArgMap.get("email");
                 final String registerPassword = registerUserArgMap.get("password");
 
-                Authentication.INSTANCE.registerUserWithCredentials(registerEmail,registerPassword,result);
+                Authentication.INSTANCE.registerUserWithCredentials(registerEmail,registerPassword,result,context);
                 break;
             case AvailableMethods.REGISTER_WITH_GOOGLE:
-                ArrayList registerWithGoogleArguments = (ArrayList) call.arguments;
-                HashMap<String, String> registerWithGoogleArgMap = new HashMap<String, String>((Map<String, String>) registerWithGoogleArguments.get(0));
-                final String googleIDP = registerWithGoogleArgMap.get("idp");
-                Authentication.INSTANCE.registerUserWithGoogle(googleIDP,result);
+                Authentication.INSTANCE.registerUserWithGoogle(result,context);
                 break;
             default:
                 result.notImplemented();
