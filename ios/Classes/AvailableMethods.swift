@@ -13,14 +13,14 @@ import UIKit
 import AuthenticationServices
 
 
+
 @available(iOS 13.0, *)
 class AvailableMethods{
     var oktaOidc: OktaOidc?
     var authStateManager: OktaOidcStateManager?
-    
+    private weak var presentationContext: ASWebAuthenticationPresentationContextProviding?
     var idxFlow: InteractionCodeFlow?
     
-    private weak var presentationContext: ASWebAuthenticationPresentationContextProviding?
     private var webAuthSession: ASWebAuthenticationSession?
     
     
@@ -36,19 +36,14 @@ class AvailableMethods{
     
     
     func logOut( callback: @escaping ((Error?) -> (Void))){
-        guard let oktaOidc = oktaOidc else {
+        guard let idxFlow = idxFlow else {
             return
         }
+            
         
         
-        let flow = InteractionCodeFlow(
-            issuer: URL(string: oktaOidc.configuration.issuer)!,
-            clientId: oktaOidc.configuration.clientId,
-            scopes: oktaOidc.configuration.scopes,
-            redirectUri: oktaOidc.configuration.redirectUri)
         
-        
-        flow.start { result in
+       idxFlow.start { result in
             switch result {
             case .success(let response):
                 if(response.isLoginSuccessful){
@@ -78,7 +73,10 @@ class AvailableMethods{
     func initOkta(configuration: [String:String], callback: ((Error?) -> (Void))) {
         do {
             let oktaConfiguration: OktaOidcConfig = try OktaOidcConfig(with: configuration);
+            let idx: InteractionCodeFlow = InteractionCodeFlow(issuer: URL(string: oktaConfiguration.issuer)!, clientId: oktaConfiguration.clientId, scopes: oktaConfiguration.scopes, redirectUri: oktaConfiguration.redirectUri)
+            self.idxFlow = idx
             self.oktaOidc = try OktaOidc(configuration: oktaConfiguration);
+            
         } catch let error {
             callback(error)
             return
@@ -87,6 +85,7 @@ class AvailableMethods{
            let _ = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)?.refreshToken {
             self.authStateManager = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)
         }
+        
         callback(nil)
     }
     
@@ -101,7 +100,7 @@ class AvailableMethods{
             clientId: oktaOidc!.configuration.clientId,
             scopes: oktaOidc!.configuration.scopes,
             redirectUri: oktaOidc!.configuration.redirectUri)
-    
+        
         
         flow.start { result in
             switch result {
@@ -208,24 +207,15 @@ class AvailableMethods{
     }
     
     
-    func signInWithBrowser(callback: @escaping (([String:String]?,Error?) -> Void), isLogin: Bool, idp: String) {
-        let viewController: UIViewController =
-        (UIApplication.shared.delegate?.window??.rootViewController)!;
-        guard let oktaOidc = oktaOidc else {
+    func signInWithBrowser(callback: @escaping (([String:String]?,Error?) -> Void), idp: String, from presentationContext: ASWebAuthenticationPresentationContextProviding? = nil) {
+        self.presentationContext = presentationContext
+       
+        guard
+            let idxFlow  = self.idxFlow
+        else {
             return
         }
-        
-        if #available(iOS 13.0, *) {
-            oktaOidc.configuration.noSSO = true
-        }
-        
-        let flow = InteractionCodeFlow(
-            issuer: URL(string: oktaOidc.configuration.issuer)!,
-            clientId: oktaOidc.configuration.clientId,
-            scopes: oktaOidc.configuration.scopes,
-            redirectUri: oktaOidc.configuration.redirectUri)
-        
-        flow.start { result in
+        idxFlow.start { result in
             switch result {
             case .success(let response):
                 var socialRemedation: Remediation?
@@ -244,7 +234,11 @@ class AvailableMethods{
                 }
                 let  socialCapabilites = remediation.socialIdp
                 
-                self.webLogin(url: socialCapabilites!.redirectUrl)
+                DispatchQueue.main.async {
+                    self.webLogin(idxflow: idxFlow , url: socialCapabilites!.redirectUrl, callback: callback)
+                }
+                
+               
                 
             case .failure(let error):
                 callback(nil, error)
@@ -423,59 +417,60 @@ class AvailableMethods{
         
     }
     
-    func webLogin(url:URL) {
-        
-        // Retrieve the Redirect URL scheme from our configuration, to
-        // supply it to the ASWebAuthenticationSession instance.
-        guard let client = oktaOidc
+    func webLogin(idxflow: InteractionCodeFlow , url : URL, callback: @escaping (([String:String]?,Error?) -> Void)) {
+        guard let client = idxFlow
+             
+              
         else {
-            
             return
         }
-        
-        // Create an ASWebAuthenticationSession to trigger the IDP OAuth2 flow.
-        let session = ASWebAuthenticationSession(url: url,
-                                                 callbackURLScheme: client.configuration.redirectUri.scheme)
-        { [weak self] (callbackURL, error) in
 
+        let session = ASWebAuthenticationSession(url: url,
+                                                 callbackURLScheme: client.redirectUri.scheme)
+        { [weak self] (returnUrl, error) in
             guard error == nil,
-                  let callbackURL = callbackURL,
-                  let client = self!.oktaOidc                else {
-                //                    self?.finish(with: error)
+                returnUrl != nil
+            else {
                 return
             }
-            
-            // Start and present the web authentication session.
-            // Ask the IDXClient for what the result of the social login was.
-            let result = self!.idxFlow!.redirectResult(for: callbackURL)
-            
+
+            let result = client.redirectResult(for: returnUrl!)
             switch result {
             case .authenticated:
-                // When the social login result is `authenticated`, use the
-                // IDXClient to exchange the callback URL returned from
-                // ASWebAuthenticationSession with an Okta token.
-                self!.idxFlow!.exchangeCode(redirect: callbackURL) { result in
+
+                client.exchangeCode(redirect: returnUrl!,completion: { result in
                     switch result{
                     case .success(let token):
-                        print(token)
+                        let tokens = token
+                        callback([
+                            "accessToken": tokens.accessToken,
+                            "userId":tokens.id
+                        ],nil)
                     case .failure(let error):
                         print(error)
+                        callback(nil, error)
                     }
-                }
-                
-            case .invalidContext,.invalidRedirectUrl,.remediationRequired:
-                print("INVAILD")
-                
+                })
+
+            
+            case .invalidContext:
+                print("Invalid context")
+            case .remediationRequired:
+                print("Remediation required")
+
+            case .invalidRedirectUrl:
+                print("Invalid redirect URL")
             }
         }
         
         
-        if #available(iOS 13.0, *) {
-            session.presentationContextProvider = presentationContext
-            session.prefersEphemeralWebBrowserSession = true
-        }
+        session.presentationContextProvider = presentationContext
+        session.prefersEphemeralWebBrowserSession = true
         session.start()
-        
         self.webAuthSession = session
     }
+    
+
 }
+
+

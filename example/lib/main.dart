@@ -14,19 +14,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   int f = 0;
-  // @override
-  // void initState() {
-  //   super.initState();
-
-  //   // OktaOidcFlutter.instance.initOkta(
-  //   //   InitOkta(
-  //   //       clientId: "0oa1k4uyv06twnAW8697",
-  //   //       issuer: "https://magnifi-dev-admin.okta.com/oauth2/default",
-  //   //       endSessionRedirectUri: "com.magnifi.app.staging:/app",
-  //   //       redirectUrl: "com.magnifi.app.staging:/app",
-  //   //       scopes: ['openid', 'profile', 'email', 'offline_access']),
-  //   // );
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +89,7 @@ class _MyAppState extends State<MyApp> {
                   // google - 0oa1k4ywmmhmfXmOT697
                   // apple - 0oa1k4zg0hmpVLa6H697
                   await OktaOidcFlutter.instance
-                      .sso(isLogin: false, idp: '0oa1k4ywmmhmfXmOT697');
+                      .sso(idp: '0oa1k4ywmmhmfXmOT697');
                 },
                 child: const Text('SSO'),
               ),
