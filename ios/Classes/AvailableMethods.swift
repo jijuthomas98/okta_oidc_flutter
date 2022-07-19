@@ -20,8 +20,9 @@ class AvailableMethods{
     var authStateManager: OktaOidcStateManager?
     private weak var presentationContext: ASWebAuthenticationPresentationContextProviding?
     var idxFlow: InteractionCodeFlow?
-    
     private var webAuthSession: ASWebAuthenticationSession?
+    var credsStorage: Credential?
+    
     
     
     func isAuthenticated(callback: ((Bool) -> (Void))?) {
@@ -36,37 +37,19 @@ class AvailableMethods{
     
     
     func logOut( callback: @escaping ((Error?) -> (Void))){
-        guard let idxFlow = idxFlow else {
+        guard let credsStorage = credsStorage else {
             return
         }
-            
-        
-        
-        
-       idxFlow.start { result in
-            switch result {
-            case .success(let response):
-                if(response.isLoginSuccessful){
-                    do{
-                        guard let remedition = response.remediations[.cancel] else{
-                            return
-                        }
-                        remedition.proceed { remeditionResponse in
-                            switch remeditionResponse {
-                            case .success(_):
-                                callback(nil)
-                                
-                            case .failure(let failureResponse):
-                                callback(failureResponse)
-                                
-                            }
-                        }
-                    }
-                }
-            case .failure(let error):
-                callback(error)
-            }
+        do{
+          let revoke =  Credential.revoke(credsStorage)
+            revoke(Token.RevokeType.accessToken, {_ in
+                revoke(Token.RevokeType.refreshToken, { _ in
+                    callback(nil)
+                })
+                
+            })
         }
+      
         
     }
     
@@ -137,6 +120,8 @@ class AvailableMethods{
                                     switch tokenResult{
                                     case .success(let tokenResponse):
                                         let tokens = tokenResponse
+                                        
+                                        self.saveCreds(token: tokens, callback: callback)
                                         callback([
                                             "accessToken": tokens.accessToken,
                                             "userId":tokens.id
@@ -163,6 +148,14 @@ class AvailableMethods{
                 callback(nil, error)
                 
             }
+        }
+    }
+    
+    func saveCreds(token: Token, callback: @escaping (([String:String]?,Error?) -> Void)){
+        do{
+            try self.credsStorage = Credential.store(token)
+        }catch{
+            callback(nil, error)
         }
     }
     
@@ -208,13 +201,14 @@ class AvailableMethods{
     
     
     func signInWithBrowser(callback: @escaping (([String:String]?,Error?) -> Void), idp: String, from presentationContext: ASWebAuthenticationPresentationContextProviding? = nil) {
-        self.presentationContext = presentationContext
-       
-        guard
-            let idxFlow  = self.idxFlow
-        else {
+        guard let idxFlow = idxFlow else {
+            callback(nil, nil)
             return
         }
+        
+        self.presentationContext = presentationContext
+        
+        
         idxFlow.start { result in
             switch result {
             case .success(let response):
@@ -238,7 +232,7 @@ class AvailableMethods{
                     self.webLogin(idxflow: idxFlow , url: socialCapabilites!.redirectUrl, callback: callback)
                 }
                 
-               
+                
                 
             case .failure(let error):
                 callback(nil, error)
@@ -418,48 +412,61 @@ class AvailableMethods{
     }
     
     func webLogin(idxflow: InteractionCodeFlow , url : URL, callback: @escaping (([String:String]?,Error?) -> Void)) {
-        guard let client = idxFlow
-             
-              
-        else {
-            return
-        }
-
+        
+        
         let session = ASWebAuthenticationSession(url: url,
-                                                 callbackURLScheme: client.redirectUri.scheme)
+                                                 callbackURLScheme: idxflow.redirectUri.scheme)
         { [weak self] (returnUrl, error) in
-            guard error == nil,
-                returnUrl != nil
+            guard error == nil
             else {
                 return
             }
-
-            let result = client.redirectResult(for: returnUrl!)
+            
+            let result = idxflow.redirectResult(for: returnUrl!)
             switch result {
             case .authenticated:
+                idxflow.exchangeCode(redirect: returnUrl!) { token in
+                    idxflow.resume { resumeResponse in
+                        switch resumeResponse{
+                        case .success(let resume):
+                            resume.exchangeCode { tokenResult in
+                                switch tokenResult{
+                                case .success(let tokens):
+                                    let token = tokens
+                                    self!.saveCreds(token: tokens, callback: callback)
+                                    print([
+                                        "accessToken": token.accessToken,
+                                        "userId":token.id
+                                    ])
+                                    callback([
+                                        "accessToken": token.accessToken,
+                                        "userId":token.id
+                                    ],nil)
 
-                client.exchangeCode(redirect: returnUrl!,completion: { result in
-                    switch result{
-                    case .success(let token):
-                        let tokens = token
-                        callback([
-                            "accessToken": tokens.accessToken,
-                            "userId":tokens.id
-                        ],nil)
-                    case .failure(let error):
-                        print(error)
-                        callback(nil, error)
+                                case .failure(let error):
+                                    callback(nil, error)
+                                }
+                            }
+                            break
+                            
+                        case .failure(let error):
+                            callback(nil, error)
+                            break
+                        }
                     }
-                })
-
-            
+                }
+                
+                
             case .invalidContext:
                 print("Invalid context")
+                break
             case .remediationRequired:
                 print("Remediation required")
-
+                break
+                
             case .invalidRedirectUrl:
                 print("Invalid redirect URL")
+                break
             }
         }
         
@@ -468,9 +475,11 @@ class AvailableMethods{
         session.prefersEphemeralWebBrowserSession = true
         session.start()
         self.webAuthSession = session
+        
+        
     }
     
-
+    
 }
 
 

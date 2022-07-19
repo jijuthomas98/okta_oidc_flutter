@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
@@ -75,7 +74,6 @@ class OktaOidcFlutter {
     } else {
       tokens = await _channel.invokeMethod("WEB_SIGN_IN", idp);
     }
-    log(tokens, name: 'SSOtokens');
     return OktaTokens.parse(tokens);
   }
 
