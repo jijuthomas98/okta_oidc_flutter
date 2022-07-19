@@ -46,4 +46,5 @@ dependencies {
     implementation 'com.okta.android:okta-idx-kotlin:2.0.0-BETA6'
     implementation 'com.okta.kotlin:auth-foundation-bootstrap:0.6.0-BETA'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.1'
+    implementation("androidx.appcompat:appcompat:1.2.0")
 }

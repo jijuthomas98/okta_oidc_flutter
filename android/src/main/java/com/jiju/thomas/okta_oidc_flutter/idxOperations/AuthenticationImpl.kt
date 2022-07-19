@@ -5,19 +5,21 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.lifecycle.ViewModel
 import com.okta.authfoundation.client.OidcClientResult
 import com.okta.authfoundation.credential.RevokeTokenType
 import com.okta.authfoundationbootstrap.CredentialBootstrap
 import com.okta.idx.kotlin.client.IdxFlow
-import com.okta.idx.kotlin.client.IdxFlow.Companion.createIdxFlow
-import com.okta.idx.kotlin.client.IdxRedirectResult
 import com.okta.idx.kotlin.dto.IdxIdpCapability
 import com.okta.idx.kotlin.dto.IdxRemediation
 import com.okta.idx.kotlin.dto.IdxResponse
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
-object AuthenticationImpl : ViewModel() {
+object AuthenticationImpl {
+
 
     suspend fun handleLogout(methodChannelResult: MethodChannel.Result) {
         when (val revokeTokenResponse =
@@ -384,63 +386,24 @@ object AuthenticationImpl : ViewModel() {
         }
         val redirectRemediation = response.remediations[IdxRemediation.Type.REDIRECT_IDP]
 
-        val idpCapability = redirectRemediation?.capabilities?.get<IdxIdpCapability>()
 
 
+       val idpCapability = redirectRemediation?.capabilities?.get<IdxIdpCapability>()
 
 
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        scope.launch {
+            if (idpCapability != null) {
+                try {
+                    val redirectUri = Uri.parse(idpCapability.redirectUrl.toString())
 
-        if (idpCapability != null) {
-            try {
-//                val redirectUri = Uri.parse(idpCapability.redirectUrl.toString())
-                val browserIntent = Intent(
-                    Intent.ACTION_VIEW,
-                    Uri.parse(idpCapability.redirectUrl.toString())
-                )
-                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(browserIntent)
+                    val browserIntent = Intent(Intent.ACTION_VIEW, redirectUri)
+                    browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                     context.startActivity(browserIntent)
 
-            } catch (e: ActivityNotFoundException) {
-                e.printStackTrace()
-            }
-            return
-        }
 
-        if (redirectRemediation != null) {
-            when(val response = flow?.proceed(redirectRemediation)){
-                is OidcClientResult.Error ->{
-                    methodChannelResult.error("REDIRECT_IDP FAILED",response.exception.message,response.exception.cause)
-                }
-                is OidcClientResult.Success ->{
-                    if(response.result.isLoginSuccessful){
-                        when (val tokenResponse =
-                            flow?.exchangeInteractionCodeForTokens(
-                                response.result.remediations[IdxRemediation.Type.ISSUE]!!
-                            )) {
-                            is OidcClientResult.Error -> {
-                                methodChannelResult.error(
-                                    "TOKEN ERROR",
-                                    tokenResponse.exception.message,
-                                    tokenResponse.exception.cause?.message
-                                )
-                                return
-                            }
-
-                            is OidcClientResult.Success -> {
-                                CredentialBootstrap.defaultCredential().storeToken(tokenResponse.result)
-                                val tokenMap =
-                                    mapOf(
-                                        "accessToken" to tokenResponse.result.accessToken,
-                                        "userId" to tokenResponse.result.idToken!!
-                                    )
-                                methodChannelResult.success(
-                                    tokenMap
-                                )
-                                return
-                            }
-                            else -> {}
-                        }
-                    }
+                } catch (e: ActivityNotFoundException) {
+                    e.printStackTrace()
                 }
             }
         }

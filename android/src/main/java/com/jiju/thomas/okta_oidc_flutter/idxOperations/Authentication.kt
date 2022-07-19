@@ -35,9 +35,7 @@ object Authentication {
     fun registerUserWithGoogle(methodChannelResult: MethodChannel.Result,context: Context) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            scope.launch {
-                createCoroutineClient("", "", methodChannelResult, false,context)
-            }
+            createCoroutineClient("", "", methodChannelResult, false,context)
         }
     }
 
@@ -48,9 +46,7 @@ object Authentication {
     ) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            scope.launch {
-                createCoroutineClient(email, password,  methodChannelResult, true,context)
-            }
+            createCoroutineClient(email, password,  methodChannelResult, true,context)
         }
     }
 
@@ -58,9 +54,7 @@ object Authentication {
     fun logout(methodChannelResult: MethodChannel.Result) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            scope.launch {
-                AuthenticationImpl.handleLogout(methodChannelResult)
-            }
+            AuthenticationImpl.handleLogout(methodChannelResult)
         }
     }
 

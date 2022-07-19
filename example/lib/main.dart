@@ -22,7 +22,7 @@ class _MyAppState extends State<MyApp> {
       InitOkta(
         clientId: '0oa1k4uyv06twnAW8697',
         issuer: 'https://magnifi-dev.okta.com/oauth2/default',
-        endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
+        endSessionRedirectUri: 'com.magnifi.app.staging:/app',
         redirectUrl: 'com.magnifi.app.staging:/app',
         scopes: ['openid', 'profile', 'email', 'offline_access'],
       ),
