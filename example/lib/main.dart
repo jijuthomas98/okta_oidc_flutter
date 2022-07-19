@@ -18,6 +18,8 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      onGenerateRoute: Routers.generateRoute,
+      initialRoute: "app",
       home: Scaffold(
         appBar: AppBar(
           title: const Text('Plugin example app'),
@@ -116,5 +118,22 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
     );
+  }
+}
+
+class Routers {
+  static Route<dynamic> generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case 'app':
+        return MaterialPageRoute(
+            settings: settings, builder: (_) => const MyApp());
+      default:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => Scaffold(
+            body: Center(child: Text('No route defined for ${settings.name}')),
+          ),
+        );
+    }
   }
 }
