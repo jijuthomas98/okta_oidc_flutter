@@ -13,21 +13,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  OktaOidcFlutter? oktaOidcFlutter;
-  @override
-  void initState() {
-    super.initState();
-
-    OktaOidcFlutter.instance.initOkta(
-      InitOkta(
-        clientId: '0oa1k4uyv06twnAW8697',
-        issuer: 'https://magnifi-dev.okta.com/oauth2/default',
-        endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
-        redirectUrl: 'com.magnifi.app.staging:/app',
-        scopes: ['openid', 'profile', 'email', 'offline_access'],
-      ),
-    );
-  }
+  int f = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -42,12 +28,28 @@ class _MyAppState extends State<MyApp> {
             children: [
               TextButton(
                 onPressed: () async {
-                  var token =
-                      await OktaOidcFlutter.instance.signInWithCredentials(
-                    email: 'gokul.krishnan@tifin.com',
-                    password: 'tPEGc96\$tT!7z',
+                  await OktaOidcFlutter.instance.initOkta(
+                    InitOkta(
+                      clientId: '0oa1k4uyv06twnAW8697',
+                      issuer: 'https://magnifi-dev.okta.com/oauth2/default',
+                      endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
+                      redirectUrl: 'com.magnifi.app.staging:/app',
+                      scopes: ['openid', 'profile', 'email', 'offline_access'],
+                    ),
                   );
-                  print(token.accessToken);
+                  // OktaTokens token = await OktaOidcFlutter.instance
+                  //     .signInWithCredentials(
+                  //         email: 'gokul2+0@magnifi.com',
+                  //         password: '12345!Aa',
+                  //         domainUrl: "https://magnifi-dev-admin.okta.com/");
+
+                  OktaTokens token = await OktaOidcFlutter.instance
+                      .registerWithCreds('gokul3+$f@magnifi.com', '12345!Aa');
+
+                  setState(() {
+                    f++;
+                  });
+                  print(token.id);
                 },
                 child: const Text('Sign In'),
               ),
@@ -60,8 +62,25 @@ class _MyAppState extends State<MyApp> {
               ),
               TextButton(
                 onPressed: () async {
+                  await OktaOidcFlutter.instance.initOkta(
+                    InitOkta(
+                        clientId: '0oa1k4uyv06twnAW8697',
+                        issuer: 'https://magnifi-dev.okta.com/oauth2/default',
+                        endSessionRedirectUri:
+                            'com.magnifi.app.staging:/splash',
+                        redirectUrl: 'com.magnifi.app.staging:/app',
+                        scopes: [
+                          'openid',
+                          'profile',
+                          'email',
+                          'offline_access'
+                        ],
+                        idp: "0oa1k4ywmmhmfXmOT697"),
+                  );
+                  // google - 0oa1k4ywmmhmfXmOT697
+                  // apple - 0oa1k4zg0hmpVLa6H697
                   await OktaOidcFlutter.instance
-                      .sso(idp: '0oa5o7sccuy5YgrIz5d7');
+                      .sso(idp: '0oa1k4ywmmhmfXmOT697');
                 },
                 child: const Text('SSO'),
               ),

@@ -2,15 +2,21 @@ import Flutter
 import UIKit
 import OktaOidc
 import OktaAuthSdk
+import OktaIdx
 
 
-public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
+@available(iOS 13.0, *)
+public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin , ASWebAuthenticationPresentationContextProviding {
     let availableMethods: AvailableMethods = AvailableMethods()
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "okta_oidc_flutter", binaryMessenger: registrar.messenger())
         let instance = SwiftOktaOidcFlutterPlugin()
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
+    
+    public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+            return ASPresentationAnchor()
+        }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
@@ -40,6 +46,10 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
                 "scopes": scopes,
                 "redirectUri": redirectUrl,
             ] ;
+            
+            
+            
+            
             
             return availableMethods.initOkta(configuration: oktaConfigMap, callback: { error in
                 if(error != nil) {
@@ -84,14 +94,24 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
             });
             break
         case "WEB_SIGN_IN":
-            availableMethods.signInWithBrowser(callback: {token,error  in
+            guard let data: String = call.arguments as? String else {
+                result(-1);
+                return;
+            }
+            let idp: String = data ;
+            
+            availableMethods.signInWithBrowser(
+                callback: {token,error  in
                 if(error != nil) {
                     let flutterError: FlutterError = FlutterError(code: "Web_In_Error", message: error?.localizedDescription, details: error.debugDescription);
                     result(flutterError);
                     return
                 }
                 result(token);
-            });
+            },
+                idp: idp,
+                from: self
+            );
             break
         case "FORGOT_PASSWORD":
             guard let creds: Dictionary = call.arguments as? [String: String] else {
@@ -127,4 +147,7 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin {
             break
         }
     }
+    
+  
 }
+
