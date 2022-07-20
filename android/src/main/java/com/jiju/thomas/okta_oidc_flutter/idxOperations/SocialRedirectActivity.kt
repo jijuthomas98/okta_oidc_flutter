@@ -10,7 +10,7 @@ class SocialRedirectActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val intent = Intent(this, this::class.java)
-        intent.action = OktaOidcFlutterPlugin.SOCIAL_REDIRECT_ACTION
+        intent.action = "SocialRedirect"
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         intent.data = getIntent().data
         println(getIntent().data.toString())
