@@ -37,19 +37,43 @@ class AvailableMethods{
     
     
     func logOut( callback: @escaping ((Error?) -> (Void))){
-        guard let credsStorage = credsStorage else {
+        guard let idxFlow = self.idxFlow,
+              let   credsStorage = self.credsStorage else {
             callback(nil)
             return
         }
         
         do{
-            let revoke =  Credential.revoke(credsStorage)
-            revoke(Token.RevokeType.accessToken, {_ in
-                revoke(Token.RevokeType.refreshToken, { _ in
-                    callback(nil)
-                })
-                
-            })
+            idxFlow.start { result in
+                switch result{
+                case .success(let successResponse):
+                    if(successResponse.isLoginSuccessful){
+                        guard let remediation = successResponse.remediations[.cancel] else{
+                            callback("error" as? Error)
+                            return
+                        }
+                        
+                        remediation.proceed(completion: { finalResult in
+                            switch finalResult {
+                            case .success(_):
+                                let revoke =  Credential.revoke(credsStorage)
+                                revoke(Token.RevokeType.accessToken, {_ in
+                                    revoke(Token.RevokeType.refreshToken, { _ in
+                                        callback(nil)
+                                    })
+                                    
+                                })
+                            case .failure(let error):
+                                callback(error)
+                            }
+                        })
+                    }else{
+                        callback("error" as? Error)
+                    }
+                case .failure(let error):
+                    callback(error)
+                }
+            }
         }
         
         
@@ -75,19 +99,15 @@ class AvailableMethods{
     }
     
     func signInWithCreds(Username: String!, Password: String!, callback: @escaping (([String:String]?,Error?) -> Void)){
-        print("inside")
-        guard oktaOidc != nil else {
+        
+        guard let idx = idxFlow else {
             return
         }
         
-        let flow = InteractionCodeFlow(
-            issuer: URL(string: oktaOidc!.configuration.issuer)!,
-            clientId: oktaOidc!.configuration.clientId,
-            scopes: oktaOidc!.configuration.scopes,
-            redirectUri: oktaOidc!.configuration.redirectUri)
         
         
-        flow.start { result in
+        
+        idx.start { result in
             switch result {
             case .success(let response):
                 guard let remediation = response.remediations[.identify],
@@ -125,8 +145,7 @@ class AvailableMethods{
                                         
                                         self.saveCreds(token: tokens, callback: callback)
                                         callback([
-                                            "accessToken": tokens.accessToken,
-                                            "userId":tokens.id
+                                            "accessToken": tokens.accessToken
                                         ],nil)
                                     case .failure(let error):
                                         callback(nil, error)
