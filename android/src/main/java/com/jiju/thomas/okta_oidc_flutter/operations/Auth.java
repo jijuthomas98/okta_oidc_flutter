@@ -36,7 +36,6 @@ public class Auth {
         final AuthenticationClient authenticationClient;
         final String orgDom = OktaClient.getInstance().getConfig().getDiscoveryUri().toString();
         authenticationClient = AuthenticationClients.builder().setOrgUrl(orgDomain).build();
-        System.out.println("RECHERD ---------------");
        new Thread(
                 new Runnable(){
                     @Override
@@ -46,7 +45,6 @@ public class Auth {
                                 @Override
                                 public void handleLockedOut(AuthenticationResponse lockedOut) {
                                     super.handleLockedOut(lockedOut);
-                                    System.out.println("LOCKOUT -----------");
                                     result.success("LOCKOUT");
                                 }
 
@@ -54,7 +52,6 @@ public class Auth {
                                 public void handleSuccess(AuthenticationResponse successResponse) {
                                     HashMap<String, String> status = new HashMap<String, String>();
                                     status.put("status", "WAITING");
-                                    System.out.println("SUCCESS -----------");
                                     result.success(status);
                                 }
 
