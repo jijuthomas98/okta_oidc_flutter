@@ -29,9 +29,10 @@ import io.flutter.plugin.common.MethodChannel.Result;
  * OktaOidcFlutterPlugin
  */
 public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
-    private MethodChannel channel;
+    public MethodChannel channel;
     private Activity mainActivity;
-    private Context context = null;
+    public static Context context = null;
+    public static MethodChannel.Result methodResult;
 
     // Flutter Engine overrides
     @Override
@@ -43,20 +44,21 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-
-
+        methodResult = result;
         switch (call.method) {
             // Create Okta Config
             case AvailableMethods.CREATE_CONFIG:
                 try {
                     ArrayList arguments = (ArrayList) call.arguments;
-                    HashMap<String, String> argMap = new HashMap<String, String>((Map<String, String>) arguments.get(0));
+                    HashMap<String, String> argMap = new HashMap<String, String>(
+                            (Map<String, String>) arguments.get(0));
                     final String clientId = argMap.get("clientId");
                     final String redirectUri = argMap.get("redirectUri");
                     final String endSessionRedirectUri = argMap.get("endSessionRedirectUri");
                     final String discoveryUri = argMap.get("discoveryUri");
                     final List<String> scopes = new ArrayList<String>(Arrays.asList(argMap.get("scopes").split(",")));
-                    final Boolean requireHardwareBackedKeyStore = Boolean.parseBoolean(argMap.get("requireHardwareBackedKeyStore"));
+                    final Boolean requireHardwareBackedKeyStore = Boolean
+                            .parseBoolean(argMap.get("requireHardwareBackedKeyStore"));
 
                     OktaRequestParameters oktaRequestParameters = new OktaRequestParameters(
                             clientId,
@@ -64,7 +66,7 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                             endSessionRedirectUri,
                             discoveryUri,
                             scopes, requireHardwareBackedKeyStore);
-
+                    Authentication.INSTANCE.init(result);
                     ConfigOktaClient.create(oktaRequestParameters, context, result);
                 } catch (Exception e) {
                     result.error("1", e.getMessage(), e.getStackTrace());
@@ -78,7 +80,7 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 final String password = argMap.get("password");
                 assert password != null;
                 assert email != null;
-                Authentication.INSTANCE.signInWithCredentials(email,password,result,context);
+                Authentication.INSTANCE.signInWithCredentials(email, password, result, context);
                 break;
             case AvailableMethods.SIGN_OUT:
                 Authentication.INSTANCE.logout(result);
@@ -91,21 +93,23 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 break;
             case AvailableMethods.FORGOT_PASSWORD:
                 ArrayList forgotPasswordArguments = (ArrayList) call.arguments;
-                HashMap<String, String> forgotPasswordMap = new HashMap<String, String>((Map<String, String>) forgotPasswordArguments.get(0));
+                HashMap<String, String> forgotPasswordMap = new HashMap<String, String>(
+                        (Map<String, String>) forgotPasswordArguments.get(0));
                 final String orgDom = forgotPasswordMap.get("orgDomain");
                 final String userName = forgotPasswordMap.get("userName");
                 Auth.forgotPassword(orgDom, userName, result);
                 break;
             case AvailableMethods.REGISTER_WITH_CREDENTIAL:
                 ArrayList registerUserArguments = (ArrayList) call.arguments;
-                HashMap<String, String> registerUserArgMap = new HashMap<String, String>((Map<String, String>) registerUserArguments.get(0));
+                HashMap<String, String> registerUserArgMap = new HashMap<String, String>(
+                        (Map<String, String>) registerUserArguments.get(0));
                 final String registerEmail = registerUserArgMap.get("email");
                 final String registerPassword = registerUserArgMap.get("password");
 
-                Authentication.INSTANCE.registerUserWithCredentials(registerEmail,registerPassword,result,context);
+                Authentication.INSTANCE.registerUserWithCredentials(registerEmail, registerPassword, result, context);
                 break;
             case AvailableMethods.REGISTER_WITH_GOOGLE:
-                Authentication.INSTANCE.registerUserWithGoogle(result,context);
+                Authentication.INSTANCE.registerUserWithGoogle(result, context);
                 break;
             default:
                 result.notImplemented();

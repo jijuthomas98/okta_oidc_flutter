@@ -1,3 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
   package="com.jiju.thomas.okta_oidc_flutter">
+    <application>
+        <activity
+            android:name=".idxOperations.SocialRedirectActivity"
+            android:autoRemoveFromRecents="true"
+            android:exported="true"
+            android:launchMode="singleInstance">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.magnifi.app.staging" />
+            </intent-filter>
+        </activity>
+    </application>
 </manifest>

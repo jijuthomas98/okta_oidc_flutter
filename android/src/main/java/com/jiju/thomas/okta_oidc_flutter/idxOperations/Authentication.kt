@@ -1,25 +1,27 @@
 package com.jiju.thomas.okta_oidc_flutter.idxOperations
 
-import android.content.ActivityNotFoundException
+import android.R.attr.identifier
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
+import com.jiju.thomas.okta_oidc_flutter.OktaOidcFlutterPlugin
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient
 import com.okta.authfoundation.client.OidcClientResult
 import com.okta.authfoundationbootstrap.CredentialBootstrap
 import com.okta.idx.kotlin.client.IdxFlow
 import com.okta.idx.kotlin.client.IdxFlow.Companion.createIdxFlow
-import com.okta.idx.kotlin.dto.IdxIdpCapability
-import com.okta.idx.kotlin.dto.IdxRemediation
-import com.okta.idx.kotlin.dto.IdxResponse
+import com.okta.idx.kotlin.client.IdxRedirectResult
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.*
 
+
 @Suppress("NAME_SHADOWING")
 object Authentication {
-
     private var flow: IdxFlow? = null
+    private lateinit var methodChannelResultForAuth: MethodChannel.Result
 
+    fun init( methodChannelResult: MethodChannel.Result) {
+        methodChannelResultForAuth = methodChannelResult
+    }
 
     fun registerUserWithCredentials(
         email: String,
@@ -56,6 +58,41 @@ object Authentication {
         scope.launch {
             AuthenticationImpl.handleLogout(methodChannelResult)
         }
+    }
+
+    fun fetchTokens(uri: Uri){
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        scope.launch {
+            handleFetchToken(uri)
+        }
+    }
+
+   private suspend fun handleFetchToken(uri: Uri){
+        println("U FUCKED UP")
+        when(val resumeResponse = flow?.resume()){
+            is OidcClientResult.Error ->{
+
+            }
+            is OidcClientResult.Success ->{
+                when (val redirectResult = flow?.evaluateRedirectUri(uri)) {
+                    is IdxRedirectResult.Error -> {
+
+                    }
+
+                    is IdxRedirectResult.Tokens -> {
+                        CredentialBootstrap.defaultCredential().storeToken(redirectResult.response)
+                        val tokenMap = mapOf(
+                            "accessToken" to redirectResult.response.accessToken,
+                            "userId" to redirectResult.response.idToken!!
+                        )
+
+                        OktaOidcFlutterPlugin.methodResult.success(tokenMap)
+                        return
+                    }
+                }
+            }
+        }
+
     }
 
 

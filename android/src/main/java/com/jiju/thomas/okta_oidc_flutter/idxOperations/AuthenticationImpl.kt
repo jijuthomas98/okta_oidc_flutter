@@ -2,9 +2,11 @@ package com.jiju.thomas.okta_oidc_flutter.idxOperations
 
 
 import android.content.ActivityNotFoundException
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.core.app.ShareCompat
 import com.okta.authfoundation.client.OidcClientResult
 import com.okta.authfoundation.credential.RevokeTokenType
 import com.okta.authfoundationbootstrap.CredentialBootstrap
@@ -346,6 +348,7 @@ object AuthenticationImpl {
         }
     }
 
+
     suspend fun handleRegisterWithGoogleResponse(
         response: IdxResponse,
         methodChannelResult: MethodChannel.Result,
@@ -400,8 +403,6 @@ object AuthenticationImpl {
                     val browserIntent = Intent(Intent.ACTION_VIEW, redirectUri)
                     browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                      context.startActivity(browserIntent)
-
-
                 } catch (e: ActivityNotFoundException) {
                     e.printStackTrace()
                 }

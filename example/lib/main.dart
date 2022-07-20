@@ -44,27 +44,27 @@ class _MyAppState extends State<MyApp> {
             children: [
               TextButton(
                 onPressed: () async {
-                  await OktaOidcFlutter.instance.initOkta(
-                    InitOkta(
-                      clientId: '0oa1k4uyv06twnAW8697',
-                      issuer: 'https://magnifi-dev.okta.com/oauth2/default',
-                      endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
-                      redirectUrl: 'com.magnifi.app.staging:/app',
-                      scopes: ['openid', 'profile', 'email', 'offline_access'],
-                    ),
+                  // await OktaOidcFlutter.instance.initOkta(
+                  //   InitOkta(
+                  //     clientId: '0oa1k4uyv06twnAW8697',
+                  //     issuer: 'https://magnifi-dev.okta.com/oauth2/default',
+                  //     endSessionRedirectUri: 'com.magnifi.app.staging:/splash',
+                  //     redirectUrl: 'com.magnifi.app.staging:/app',
+                  //     scopes: ['openid', 'profile', 'email', 'offline_access'],
+                  //   ),
+                  // );
+                  OktaTokens token =
+                      await OktaOidcFlutter.instance.signInWithCredentials(
+                    email: 'gokul2+0@magnifi.com',
+                    password: '12345!Aa',
                   );
+
                   // OktaTokens token = await OktaOidcFlutter.instance
-                  //     .signInWithCredentials(
-                  //         email: 'gokul2+0@magnifi.com',
-                  //         password: '12345!Aa',
-                  //         domainUrl: "https://magnifi-dev-admin.okta.com/");
+                  //     .registerWithCreds('gokul3+$f@magnifi.com', '12345!Aa');
 
-                  OktaTokens token = await OktaOidcFlutter.instance
-                      .registerWithCreds('gokul3+$f@magnifi.com', '12345!Aa');
-
-                  setState(() {
-                    f++;
-                  });
+                  // setState(() {
+                  //   f++;
+                  // });
                   print(token.id);
                 },
                 child: const Text('Sign In'),
