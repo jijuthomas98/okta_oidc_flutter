@@ -43,7 +43,7 @@ class AvailableMethods{
         }
         
         do{
-          let revoke =  Credential.revoke(credsStorage)
+            let revoke =  Credential.revoke(credsStorage)
             revoke(Token.RevokeType.accessToken, {_ in
                 revoke(Token.RevokeType.refreshToken, { _ in
                     callback(nil)
@@ -51,7 +51,7 @@ class AvailableMethods{
                 
             })
         }
-      
+        
         
     }
     
@@ -133,6 +133,7 @@ class AvailableMethods{
                                     }
                                 }
                             case .failure(let failurePasswordResponse):
+                                callback(nil, failurePasswordResponse)
                                 print(failurePasswordResponse)
                                 
                                 
@@ -147,6 +148,7 @@ class AvailableMethods{
                 }
                 
             case .failure(let error):
+                
                 callback(nil, error)
                 
             }
@@ -444,7 +446,7 @@ class AvailableMethods{
                                         "accessToken": token.accessToken,
                                         "userId":token.id
                                     ],nil)
-
+                                    
                                 case .failure(let error):
                                     callback(nil, error)
                                 }
