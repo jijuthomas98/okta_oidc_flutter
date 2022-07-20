@@ -2,11 +2,9 @@ package com.jiju.thomas.okta_oidc_flutter.idxOperations
 
 
 import android.content.ActivityNotFoundException
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.core.app.ShareCompat
 import com.okta.authfoundation.client.OidcClientResult
 import com.okta.authfoundation.credential.RevokeTokenType
 import com.okta.authfoundationbootstrap.CredentialBootstrap
@@ -15,29 +13,70 @@ import com.okta.idx.kotlin.dto.IdxIdpCapability
 import com.okta.idx.kotlin.dto.IdxRemediation
 import com.okta.idx.kotlin.dto.IdxResponse
 import io.flutter.plugin.common.MethodChannel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+
 
 object AuthenticationImpl {
 
 
-    suspend fun handleLogout(methodChannelResult: MethodChannel.Result) {
-        when (val revokeTokenResponse =
-            CredentialBootstrap.defaultCredential().revokeToken(RevokeTokenType.ACCESS_TOKEN)) {
-            is OidcClientResult.Error -> {
-                methodChannelResult.error(
-                    "REVOKE_ACCESS_TOKEN Failed",
-                    revokeTokenResponse.exception.message,
-                    revokeTokenResponse.exception.cause
-                )
-            }
-            is OidcClientResult.Success -> {
-                methodChannelResult.success(true)
+    suspend fun handleLogout(
+        response: IdxResponse,
+        methodChannelResult: MethodChannel.Result,
+        flow: IdxFlow?
+    ) {
+        if (flow == null) {
+            methodChannelResult.success(false)
+            return
+        }
+        for (remediation in response.remediations) {
+            if (remediation.type == IdxRemediation.Type.CANCEL) {
+                when (val cancelResponse = flow.proceed(remediation)) {
+                    is OidcClientResult.Error -> {
+                        methodChannelResult.error(
+                            "REVOKE_ACCESS_TOKEN Failed in remediation",
+                            cancelResponse.exception.message,
+                            cancelResponse.exception.cause
+                        )
+                        return
+                    }
+                    is OidcClientResult.Success -> {
+                        if (CredentialBootstrap.defaultCredential().token != null) {
+                            when (val revokeAccessTokenResponse =
+                                CredentialBootstrap.defaultCredential()
+                                    .revokeToken(RevokeTokenType.ACCESS_TOKEN)) {
+                                is OidcClientResult.Error -> {
+                                    methodChannelResult.error(
+                                        "REVOKE_ACCESS_TOKEN Failed",
+                                        revokeAccessTokenResponse.exception.message,
+                                        revokeAccessTokenResponse.exception.cause
+                                    )
+                                    return
+                                }
+                                is OidcClientResult.Success -> {
+
+                                    when (CredentialBootstrap.defaultCredential().refreshToken()) {
+                                        is OidcClientResult.Error -> {
+                                            methodChannelResult.success(false)
+                                            return
+                                        }
+                                        is OidcClientResult.Success -> {
+                                            CredentialBootstrap.defaultCredential().delete()
+                                            methodChannelResult.success(true)
+                                            return
+                                        }
+                                    }
+
+                                }
+                            }
+                        } else {
+                            methodChannelResult.success(false)
+                            return
+                        }
+                    }
+                }
             }
         }
     }
+
 
     suspend fun handleSignInWithCredentials(
         response: IdxResponse,
@@ -46,7 +85,14 @@ object AuthenticationImpl {
         methodChannelResult: MethodChannel.Result,
         flow: IdxFlow?,
     ) {
-        if (flow == null) return
+        if (flow == null) {
+            methodChannelResult.error(
+                "FLOW ERROR",
+               "failed to init IDXFlow",
+                "At handleSignInWithCredentials method"
+            )
+            return
+        }
 
         if (response.isLoginSuccessful) {
             when (val result =
@@ -89,23 +135,31 @@ object AuthenticationImpl {
                 rememberThisDevice?.value = true
                 when (val identifyResponse = flow.proceed(remediation)) {
                     is OidcClientResult.Error -> {
-
+                        methodChannelResult.error(
+                            "IDENTIFY ERROR",
+                            identifyResponse.exception.message,
+                            identifyResponse.exception.cause?.message
+                        )
+                        return
                     }
                     is OidcClientResult.Success -> {
-
                         val challengeAuthenticatorRemediation =
                             identifyResponse.result.remediations[IdxRemediation.Type.CHALLENGE_AUTHENTICATOR]
                         val passwordField =
                             challengeAuthenticatorRemediation?.get("credentials.passcode")
                         if (passwordField != null) {
                             passwordField.value = password
-
                         }
                         if (challengeAuthenticatorRemediation != null) {
                             when (val challengeAuthenticatorResponse =
                                 flow.proceed(challengeAuthenticatorRemediation)) {
                                 is OidcClientResult.Error -> {
-
+                                    methodChannelResult.error(
+                                        "CHALLENGE_AUTHENTICATOR ERROR",
+                                        challengeAuthenticatorResponse.exception.message,
+                                        challengeAuthenticatorResponse.exception.cause?.message
+                                    )
+                                    return
                                 }
                                 is OidcClientResult.Success -> {
                                     if (challengeAuthenticatorResponse.result.isLoginSuccessful) {
@@ -234,16 +288,12 @@ object AuthenticationImpl {
                                             "enrollProfileResponse"
                                         )
                                         return
-
                                     }
 
                                     val selectAuthenticatorEnrollRemediation =
                                         enrollProfileResponse.result.remediations[IdxRemediation.Type.SELECT_AUTHENTICATOR_ENROLL]
-
                                     val authenticationOption =
-                                        selectAuthenticatorEnrollRemediation?.form?.get("authenticator")?.options?.get(
-                                            0
-                                        )
+                                        selectAuthenticatorEnrollRemediation?.form?.get("authenticator")?.options?.get(0)
                                     if (selectAuthenticatorEnrollRemediation != null) {
                                         selectAuthenticatorEnrollRemediation.form["authenticator"]?.selectedOption =
                                             authenticationOption
@@ -388,24 +438,16 @@ object AuthenticationImpl {
             return
         }
         val redirectRemediation = response.remediations[IdxRemediation.Type.REDIRECT_IDP]
+        val idpCapability = redirectRemediation?.capabilities?.get<IdxIdpCapability>()
 
-
-
-       val idpCapability = redirectRemediation?.capabilities?.get<IdxIdpCapability>()
-
-
-        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-        scope.launch {
-            if (idpCapability != null) {
-                try {
-                    val redirectUri = Uri.parse(idpCapability.redirectUrl.toString())
-
-                    val browserIntent = Intent(Intent.ACTION_VIEW, redirectUri)
-                    browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                     context.startActivity(browserIntent)
-                } catch (e: ActivityNotFoundException) {
-                    e.printStackTrace()
-                }
+        if (idpCapability != null) {
+            try {
+                val redirectUri = Uri.parse(idpCapability.redirectUrl.toString())
+                val browserIntent = Intent(Intent.ACTION_VIEW, redirectUri)
+                browserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(browserIntent)
+            } catch (e: ActivityNotFoundException) {
+                e.printStackTrace()
             }
         }
     }

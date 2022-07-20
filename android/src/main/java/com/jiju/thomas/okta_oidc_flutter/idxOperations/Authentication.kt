@@ -5,11 +5,13 @@ import android.content.Context
 import android.net.Uri
 import com.jiju.thomas.okta_oidc_flutter.OktaOidcFlutterPlugin
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient
+import com.jiju.thomas.okta_oidc_flutter.utils.OktaRequestParameters
 import com.okta.authfoundation.client.OidcClientResult
 import com.okta.authfoundationbootstrap.CredentialBootstrap
 import com.okta.idx.kotlin.client.IdxFlow
 import com.okta.idx.kotlin.client.IdxFlow.Companion.createIdxFlow
 import com.okta.idx.kotlin.client.IdxRedirectResult
+import com.okta.oidc.net.request.web.LogoutRequest
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.*
 
@@ -30,14 +32,14 @@ object Authentication {
     ) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient(email, password,  methodChannelResult, false,context)
+            createCoroutineClient(email, password,  methodChannelResult, false,context,false)
         }
     }
 
     fun registerUserWithGoogle(methodChannelResult: MethodChannel.Result,context: Context) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient("", "", methodChannelResult, false,context)
+            createCoroutineClient("", "", methodChannelResult, false,context,false)
         }
     }
 
@@ -48,15 +50,15 @@ object Authentication {
     ) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient(email, password,  methodChannelResult, true,context)
+            createCoroutineClient(email, password,  methodChannelResult, true,context,false)
         }
     }
 
 
-    fun logout(methodChannelResult: MethodChannel.Result) {
+    fun logout(methodChannelResult: MethodChannel.Result,context: Context) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            AuthenticationImpl.handleLogout(methodChannelResult)
+            createCoroutineClient("","",methodChannelResult,false,OktaOidcFlutterPlugin.context,true )
         }
     }
 
@@ -68,7 +70,6 @@ object Authentication {
     }
 
    private suspend fun handleFetchToken(uri: Uri){
-        println("U FUCKED UP")
         when(val resumeResponse = flow?.resume()){
             is OidcClientResult.Error ->{
 
@@ -99,10 +100,10 @@ object Authentication {
     private suspend fun createCoroutineClient(
         email: String,
         password: String,
-
         methodChannelResult: MethodChannel.Result,
         isSignIn: Boolean,
-        context: Context
+        context: Context,
+        isLogoutRequest: Boolean,
     ) {
 
         when (
@@ -129,9 +130,7 @@ object Authentication {
                         )
                         return
                     }
-
                     is OidcClientResult.Success -> {
-
                         if (email.isNotEmpty() && password.isNotEmpty() && !isSignIn) {
 
                             AuthenticationImpl.handleRegisterWithCredentialsResponse(
@@ -148,6 +147,8 @@ object Authentication {
                                 password,
                                 methodChannelResult, flow
                             )
+                        }else if(isLogoutRequest){
+                            AuthenticationImpl.handleLogout(resumeResult.result ,methodChannelResult, flow)
                         } else {
                            AuthenticationImpl.handleRegisterWithGoogleResponse(
                                 resumeResult.result,

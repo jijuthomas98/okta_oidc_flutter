@@ -55,8 +55,8 @@ class _MyAppState extends State<MyApp> {
                   // );
                   OktaTokens token =
                       await OktaOidcFlutter.instance.signInWithCredentials(
-                    email: 'gokul2+0@magnifi.com',
-                    password: '12345!Aa',
+                    email: 'jijujoel@tifin.com',
+                    password: 'Test100@',
                   );
 
                   // OktaTokens token = await OktaOidcFlutter.instance
@@ -65,7 +65,7 @@ class _MyAppState extends State<MyApp> {
                   // setState(() {
                   //   f++;
                   // });
-                  print(token.id);
+                  print(token.accessToken);
                 },
                 child: const Text('Sign In'),
               ),
@@ -110,12 +110,20 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () async {
                   OktaTokens token =
                       await OktaOidcFlutter.instance.registerWithCreds(
-                    'jiju.thomas987879asasas89@tifin.com',
-                    'tPEGc96\$tT!7z',
+                    'jijujoel@tifin.com',
+                    'Test100@',
                   );
                   print(token.accessToken);
                 },
                 child: const Text('Register'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  var res = await OktaOidcFlutter.instance.forgotPassword(
+                      'jijujoel@tifin.com', 'https://magnifi-dev.okta.com');
+                  print(res);
+                },
+                child: const Text('Forget pwd'),
               ),
             ],
           ),

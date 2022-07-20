@@ -34,29 +34,42 @@ public class Auth {
             return;
         }
         final AuthenticationClient authenticationClient;
+        final String orgDom = OktaClient.getInstance().getConfig().getDiscoveryUri().toString();
         authenticationClient = AuthenticationClients.builder().setOrgUrl(orgDomain).build();
-        try {
-            authenticationClient.recoverPassword(userName, FactorType.EMAIL, null, new AuthenticationStateHandlerAdapter() {
-                @Override
-                public void handleLockedOut(AuthenticationResponse lockedOut) {
-                    super.handleLockedOut(lockedOut);
-                }
+        System.out.println("RECHERD ---------------");
+       new Thread(
+                new Runnable(){
+                    @Override
+                    public void run() {
+                        try {
+                            authenticationClient.recoverPassword(userName, FactorType.EMAIL, null, new AuthenticationStateHandlerAdapter() {
+                                @Override
+                                public void handleLockedOut(AuthenticationResponse lockedOut) {
+                                    super.handleLockedOut(lockedOut);
+                                    System.out.println("LOCKOUT -----------");
+                                    result.success("LOCKOUT");
+                                }
 
-                @Override
-                public void handleSuccess(AuthenticationResponse successResponse) {
-                    HashMap<String, String> status = new HashMap<String, String>();
-                    status.put("status", "WAITING");
-                    result.success(status);
-                }
+                                @Override
+                                public void handleSuccess(AuthenticationResponse successResponse) {
+                                    HashMap<String, String> status = new HashMap<String, String>();
+                                    status.put("status", "WAITING");
+                                    System.out.println("SUCCESS -----------");
+                                    result.success(status);
+                                }
 
-                @Override
-                public void handleUnknown(AuthenticationResponse unknownResponse) {
-                    result.error("400", "Unknown error", "Unable to recover password");
+                                @Override
+                                public void handleUnknown(AuthenticationResponse unknownResponse) {
+                                    result.error("400", "Unknown error", "Unable to recover password");
+                                }
+                            });
+                        } catch (AuthenticationException e) {
+                            result.error(e.getCode(), e.getMessage(), e.getCauses());
+                        }
+                    }
                 }
-            });
-        } catch (AuthenticationException e) {
-            result.error(e.getCode(), e.getMessage(), e.getCauses());
-        }
+        ).start();
+
     }
 
 

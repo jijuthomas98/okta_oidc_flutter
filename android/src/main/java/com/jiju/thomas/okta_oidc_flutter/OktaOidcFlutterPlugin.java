@@ -83,7 +83,7 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 Authentication.INSTANCE.signInWithCredentials(email, password, result, context);
                 break;
             case AvailableMethods.SIGN_OUT:
-                Authentication.INSTANCE.logout(result);
+                Authentication.INSTANCE.logout(result,context);
                 break;
             case AvailableMethods.WEB_SIGN_IN:
                 ArrayList argument = (ArrayList) call.arguments;
@@ -96,7 +96,7 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 HashMap<String, String> forgotPasswordMap = new HashMap<String, String>(
                         (Map<String, String>) forgotPasswordArguments.get(0));
                 final String orgDom = forgotPasswordMap.get("orgDomain");
-                final String userName = forgotPasswordMap.get("userName");
+                final String userName = forgotPasswordMap.get("username");
                 Auth.forgotPassword(orgDom, userName, result);
                 break;
             case AvailableMethods.REGISTER_WITH_CREDENTIAL:
