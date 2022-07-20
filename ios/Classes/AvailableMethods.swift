@@ -38,8 +38,10 @@ class AvailableMethods{
     
     func logOut( callback: @escaping ((Error?) -> (Void))){
         guard let credsStorage = credsStorage else {
+            callback(nil)
             return
         }
+        
         do{
           let revoke =  Credential.revoke(credsStorage)
             revoke(Token.RevokeType.accessToken, {_ in
