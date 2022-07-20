@@ -1,22 +1,20 @@
 package com.jiju.thomas.okta_oidc_flutter.idxOperations
 
-import android.R.attr.identifier
+
 import android.content.Context
 import android.net.Uri
 import com.jiju.thomas.okta_oidc_flutter.OktaOidcFlutterPlugin
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient
-import com.jiju.thomas.okta_oidc_flutter.utils.OktaRequestParameters
 import com.okta.authfoundation.client.OidcClientResult
 import com.okta.authfoundationbootstrap.CredentialBootstrap
 import com.okta.idx.kotlin.client.IdxFlow
 import com.okta.idx.kotlin.client.IdxFlow.Companion.createIdxFlow
 import com.okta.idx.kotlin.client.IdxRedirectResult
-import com.okta.oidc.net.request.web.LogoutRequest
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.*
 
 
-@Suppress("NAME_SHADOWING")
+
 object Authentication {
     private var flow: IdxFlow? = null
     private lateinit var methodChannelResultForAuth: MethodChannel.Result
@@ -58,7 +56,7 @@ object Authentication {
     fun logout(methodChannelResult: MethodChannel.Result,context: Context) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient("","",methodChannelResult,false,OktaOidcFlutterPlugin.context,true )
+            createCoroutineClient("","",methodChannelResult,false,context,true )
         }
     }
 
@@ -70,14 +68,16 @@ object Authentication {
     }
 
    private suspend fun handleFetchToken(uri: Uri){
-        when(val resumeResponse = flow?.resume()){
+        when(val response =  flow?.resume()){
             is OidcClientResult.Error ->{
-
+            OktaOidcFlutterPlugin.methodResult.error("FETCH TOKEN FAILED",response.exception.toString(),response.exception.message)
             }
             is OidcClientResult.Success ->{
                 when (val redirectResult = flow?.evaluateRedirectUri(uri)) {
                     is IdxRedirectResult.Error -> {
-
+                        OktaOidcFlutterPlugin.methodResult.error("FETCH TOKEN FAILED",redirectResult.errorMessage,
+                            redirectResult.exception?.message
+                        )
                     }
 
                     is IdxRedirectResult.Tokens -> {
@@ -90,8 +90,10 @@ object Authentication {
                         OktaOidcFlutterPlugin.methodResult.success(tokenMap)
                         return
                     }
+                    else -> {}
                 }
             }
+            else -> {}
         }
 
     }
@@ -148,7 +150,8 @@ object Authentication {
                                 methodChannelResult, flow
                             )
                         }else if(isLogoutRequest){
-                            AuthenticationImpl.handleLogout(resumeResult.result ,methodChannelResult, flow)
+                            AuthenticationImpl.handleLogout(resumeResult.result,methodChannelResult,
+                                flow)
                         } else {
                            AuthenticationImpl.handleRegisterWithGoogleResponse(
                                 resumeResult.result,

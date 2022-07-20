@@ -92,12 +92,12 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 Auth.signInWithBrowser(idp, mainActivity, result);
                 break;
             case AvailableMethods.FORGOT_PASSWORD:
-                ArrayList forgotPasswordArguments = (ArrayList) call.arguments;
-                HashMap<String, String> forgotPasswordMap = new HashMap<String, String>(
-                        (Map<String, String>) forgotPasswordArguments.get(0));
-                final String orgDom = forgotPasswordMap.get("orgDomain");
-                final String userName = forgotPasswordMap.get("username");
-                Auth.forgotPassword(orgDom, userName, result);
+//                ArrayList forgotPasswordArguments = (ArrayList) call.arguments;
+//                HashMap<String, String> forgotPasswordMap = new HashMap<String, String>(
+//                        (Map<String, String>) forgotPasswordArguments.get(0));
+//                final String orgDom = forgotPasswordMap.get("orgDomain");
+//                final String userName = forgotPasswordMap.get("username");
+//                Auth.forgotPassword(orgDom, userName, result);
                 break;
             case AvailableMethods.REGISTER_WITH_CREDENTIAL:
                 ArrayList registerUserArguments = (ArrayList) call.arguments;

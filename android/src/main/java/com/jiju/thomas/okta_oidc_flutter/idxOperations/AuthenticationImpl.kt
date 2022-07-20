@@ -17,7 +17,6 @@ import io.flutter.plugin.common.MethodChannel
 
 object AuthenticationImpl {
 
-
     suspend fun handleLogout(
         response: IdxResponse,
         methodChannelResult: MethodChannel.Result,
@@ -85,16 +84,19 @@ object AuthenticationImpl {
         methodChannelResult: MethodChannel.Result,
         flow: IdxFlow?,
     ) {
+        println("start")
         if (flow == null) {
             methodChannelResult.error(
                 "FLOW ERROR",
                "failed to init IDXFlow",
                 "At handleSignInWithCredentials method"
             )
+            println("flow is empty")
             return
         }
 
         if (response.isLoginSuccessful) {
+            println("Log in success")
             when (val result =
                 flow.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
                 is OidcClientResult.Error -> {
@@ -107,6 +109,7 @@ object AuthenticationImpl {
                 }
 
                 is OidcClientResult.Success -> {
+                    println("ISSUE success")
                     CredentialBootstrap.defaultCredential().storeToken(result.result)
                     val tokenMap = mapOf(
                         "accessToken" to result.result.accessToken,
@@ -127,6 +130,7 @@ object AuthenticationImpl {
             return
         }
 
+        println("Starting remediation check")
         for (remediation in response.remediations) {
             if (remediation.type == IdxRemediation.Type.IDENTIFY) {
                 val userName = remediation["identifier"]
@@ -135,6 +139,7 @@ object AuthenticationImpl {
                 rememberThisDevice?.value = true
                 when (val identifyResponse = flow.proceed(remediation)) {
                     is OidcClientResult.Error -> {
+                        println("IDENTIFY failed")
                         methodChannelResult.error(
                             "IDENTIFY ERROR",
                             identifyResponse.exception.message,
@@ -143,6 +148,7 @@ object AuthenticationImpl {
                         return
                     }
                     is OidcClientResult.Success -> {
+                        println("IDENTIFY remediation success")
                         val challengeAuthenticatorRemediation =
                             identifyResponse.result.remediations[IdxRemediation.Type.CHALLENGE_AUTHENTICATOR]
                         val passwordField =
@@ -154,6 +160,7 @@ object AuthenticationImpl {
                             when (val challengeAuthenticatorResponse =
                                 flow.proceed(challengeAuthenticatorRemediation)) {
                                 is OidcClientResult.Error -> {
+                                    println("CHALLENGE_AUTHENTICATOR failed")
                                     methodChannelResult.error(
                                         "CHALLENGE_AUTHENTICATOR ERROR",
                                         challengeAuthenticatorResponse.exception.message,
@@ -162,12 +169,14 @@ object AuthenticationImpl {
                                     return
                                 }
                                 is OidcClientResult.Success -> {
+                                    println("CHALLENGE_AUTHENTICATOR success")
                                     if (challengeAuthenticatorResponse.result.isLoginSuccessful) {
                                         when (val tokenResponse =
                                             flow.exchangeInteractionCodeForTokens(
                                                 challengeAuthenticatorResponse.result.remediations[IdxRemediation.Type.ISSUE]!!
                                             )) {
                                             is OidcClientResult.Error -> {
+                                                println("Exchange failed")
                                                 methodChannelResult.error(
                                                     "TOKEN ERROR",
                                                     tokenResponse.exception.message,
@@ -177,6 +186,7 @@ object AuthenticationImpl {
                                             }
 
                                             is OidcClientResult.Success -> {
+                                                println("ISSUE success")
                                                 CredentialBootstrap.defaultCredential()
                                                     .storeToken(tokenResponse.result)
                                                 val tokenMap =
@@ -189,8 +199,12 @@ object AuthenticationImpl {
                                                 )
                                                 return
                                             }
-                                            else -> {}
+                                            else -> {
+                                                println("challengeAuthenticatorResponse failed to run ISSUE")
+                                            }
                                         }
+                                    }else{
+                                        println("NOT LOGIN")
                                     }
                                 }
                                 else -> {}
