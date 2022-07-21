@@ -12,20 +12,20 @@ class OktaOidcFlutter {
   OktaOidcFlutter._();
   static OktaOidcFlutter get instance => _instance ??= OktaOidcFlutter._();
 
-  bool _isInitialized = false;
+  bool isInitialized = false;
 
   /// Initialize Okta OIDC
   Future<void> initOkta(InitOkta request) async {
-    _isInitialized = false;
+    isInitialized = false;
     try {
       if (Platform.isAndroid) {
         await _channel.invokeMethod("CREATE_CONFIG", [request.toMap()]);
       } else {
         await _channel.invokeMethod("CREATE_CONFIG", request.toMap());
       }
-      _isInitialized = true;
+      isInitialized = true;
     } catch (e) {
-      _isInitialized = false;
+      isInitialized = false;
     }
   }
 
@@ -33,7 +33,7 @@ class OktaOidcFlutter {
     required String email,
     required String password,
   }) async {
-    if (_isInitialized == false) {
+    if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
     Map? tokens;
@@ -56,7 +56,7 @@ class OktaOidcFlutter {
   Future<OktaTokens> sso({
     required String idp,
   }) async {
-    if (_isInitialized == false) {
+    if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
 
@@ -75,7 +75,7 @@ class OktaOidcFlutter {
 
   /// Sign out by revoking okta tokens
   Future<bool> signOut() async {
-    if (_isInitialized == false) {
+    if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
 
@@ -83,7 +83,7 @@ class OktaOidcFlutter {
   }
 
   Future<Map>? forgotPassword(String userName, String domainUrl) async {
-    if (_isInitialized == false) {
+    if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
 
@@ -122,7 +122,7 @@ class OktaOidcFlutter {
   }
 
   Future<OktaTokens> registerWithGoogle() async {
-    if (_isInitialized == false) {
+    if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
     // ignore: prefer_typing_uninitialized_variables
