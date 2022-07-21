@@ -26,10 +26,12 @@ object AuthenticationImpl {
             methodChannelResult.success(false)
             return
         }
+        println("logout started")
         for (remediation in response.remediations) {
             if (remediation.type == IdxRemediation.Type.CANCEL) {
                 when (val cancelResponse = flow.proceed(remediation)) {
                     is OidcClientResult.Error -> {
+                        println("canceling error")
                         methodChannelResult.error(
                             "REVOKE_ACCESS_TOKEN Failed in remediation",
                             cancelResponse.exception.message,
@@ -38,11 +40,13 @@ object AuthenticationImpl {
                         return
                     }
                     is OidcClientResult.Success -> {
+                        println("canceled success")
                         if (CredentialBootstrap.defaultCredential().token != null) {
                             when (val revokeAccessTokenResponse =
                                 CredentialBootstrap.defaultCredential()
                                     .revokeToken(RevokeTokenType.ACCESS_TOKEN)) {
                                 is OidcClientResult.Error -> {
+                                    println("revoke access token failed")
                                     methodChannelResult.error(
                                         "REVOKE_ACCESS_TOKEN Failed",
                                         revokeAccessTokenResponse.exception.message,
@@ -51,13 +55,15 @@ object AuthenticationImpl {
                                     return
                                 }
                                 is OidcClientResult.Success -> {
-
+                                    println("revoked access token")
                                     when (CredentialBootstrap.defaultCredential().refreshToken()) {
                                         is OidcClientResult.Error -> {
+                                            println("revoke refresh token success")
                                             methodChannelResult.success(false)
                                             return
                                         }
                                         is OidcClientResult.Success -> {
+                                            println("revoke refresh token failed")
                                             CredentialBootstrap.defaultCredential().delete()
                                             methodChannelResult.success(true)
                                             return
@@ -149,8 +155,7 @@ object AuthenticationImpl {
                     }
                     is OidcClientResult.Success -> {
                         println("IDENTIFY remediation success")
-                        val challengeAuthenticatorRemediation =
-                            identifyResponse.result.remediations[IdxRemediation.Type.CHALLENGE_AUTHENTICATOR]
+                        val challengeAuthenticatorRemediation = identifyResponse.result.remediations[IdxRemediation.Type.CHALLENGE_AUTHENTICATOR]
                         val passwordField =
                             challengeAuthenticatorRemediation?.get("credentials.passcode")
                         if (passwordField != null) {
@@ -210,6 +215,8 @@ object AuthenticationImpl {
                                 }
                                 else -> {}
                             }
+                        }else{
+                            methodChannelResult.error("E0000004","User not found","E0000004")
                         }
                     }
                     else -> {}
