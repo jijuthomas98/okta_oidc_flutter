@@ -205,6 +205,7 @@ object AuthenticationImpl {
                                         }
                                     }else{
                                         println("NOT LOGIN")
+                                        methodChannelResult.error("E0000004","User not found","E0000004")
                                     }
                                 }
                                 else -> {}

@@ -110,20 +110,12 @@ class _MyAppState extends State<MyApp> {
                 onPressed: () async {
                   OktaTokens token =
                       await OktaOidcFlutter.instance.registerWithCreds(
-                    'jijujoel@tifin.com',
+                    'jijujoel15@tifin.com',
                     'Test100@',
                   );
                   print(token.accessToken);
                 },
                 child: const Text('Register'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  var res = await OktaOidcFlutter.instance.forgotPassword(
-                      'jijujoel@tifin.com', 'https://magnifi-dev.okta.com');
-                  print(res);
-                },
-                child: const Text('Forget pwd'),
               ),
             ],
           ),
