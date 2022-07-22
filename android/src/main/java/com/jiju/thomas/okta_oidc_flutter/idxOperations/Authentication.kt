@@ -73,14 +73,18 @@ object Authentication {
             OktaOidcFlutterPlugin.methodResult.error("FETCH TOKEN FAILED",response.exception.toString(),response.exception.message)
             }
             is OidcClientResult.Success ->{
+                println("Fetching token")
                 when (val redirectResult = flow?.evaluateRedirectUri(uri)) {
                     is IdxRedirectResult.Error -> {
+                        println("fetch token failed")
+
                         OktaOidcFlutterPlugin.methodResult.error("FETCH TOKEN FAILED",redirectResult.errorMessage,
                             redirectResult.exception?.message
                         )
                     }
 
                     is IdxRedirectResult.Tokens -> {
+                        println("fetch token success")
                         CredentialBootstrap.defaultCredential().storeToken(redirectResult.response)
                         val tokenMap = mapOf(
                             "accessToken" to redirectResult.response.accessToken,

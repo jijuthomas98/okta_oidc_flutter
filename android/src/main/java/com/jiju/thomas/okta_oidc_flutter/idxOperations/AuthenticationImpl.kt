@@ -58,13 +58,12 @@ object AuthenticationImpl {
                                     println("revoked access token")
                                     when (CredentialBootstrap.defaultCredential().refreshToken()) {
                                         is OidcClientResult.Error -> {
-                                            println("revoke refresh token success")
+                                            println("revoke refresh token failed")
                                             methodChannelResult.success(false)
                                             return
                                         }
                                         is OidcClientResult.Success -> {
-                                            println("revoke refresh token failed")
-                                            CredentialBootstrap.defaultCredential().delete()
+                                            println("revoke refresh token success")
                                             methodChannelResult.success(true)
                                             return
                                         }
@@ -73,7 +72,7 @@ object AuthenticationImpl {
                                 }
                             }
                         } else {
-                            methodChannelResult.success(false)
+                            methodChannelResult.success(true)
                             return
                         }
                     }
@@ -101,40 +100,6 @@ object AuthenticationImpl {
             return
         }
 
-        if (response.isLoginSuccessful) {
-            println("Log in success")
-            when (val result =
-                flow.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
-                is OidcClientResult.Error -> {
-                    methodChannelResult.error(
-                        "TOKEN ERROR",
-                        result.exception.message,
-                        result.exception.cause?.message
-                    )
-                    return
-                }
-
-                is OidcClientResult.Success -> {
-                    println("ISSUE success")
-                    CredentialBootstrap.defaultCredential().storeToken(result.result)
-                    val tokenMap = mapOf(
-                        "accessToken" to result.result.accessToken,
-                        "userId" to result.result.idToken!!
-                    )
-                    methodChannelResult.success(tokenMap)
-                    return
-                }
-                else -> {
-                    handleRegisterWithCredentialsResponse(
-                        response,
-                        email,
-                        password,
-                        methodChannelResult, flow
-                    )
-                }
-            }
-            return
-        }
 
         println("Starting remediation check")
         for (remediation in response.remediations) {
@@ -233,38 +198,7 @@ object AuthenticationImpl {
         flow: IdxFlow?
     ) {
         if (flow == null) return
-        if (response.isLoginSuccessful) {
-            when (val result =
-                flow.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
-                is OidcClientResult.Error -> {
-                    methodChannelResult.error(
-                        "TOKEN ERROR",
-                        result.exception.message,
-                        result.exception.cause?.message
-                    )
-                    return
-                }
 
-                is OidcClientResult.Success -> {
-                    CredentialBootstrap.defaultCredential().storeToken(result.result)
-                    val tokenMap = mapOf(
-                        "accessToken" to result.result.accessToken,
-                        "userId" to result.result.idToken!!
-                    )
-                    methodChannelResult.success(tokenMap)
-                    return
-                }
-                else -> {
-                    handleRegisterWithCredentialsResponse(
-                        response,
-                        email,
-                        password,
-                        methodChannelResult, flow
-                    )
-                }
-            }
-            return
-        }
 
 
         for (remediation in response.remediations) {
@@ -427,42 +361,13 @@ object AuthenticationImpl {
         context: Context, flow: IdxFlow?,
     ) {
         if (flow == null) return
-        if (response.isLoginSuccessful) {
-            when (val result =
-                flow.exchangeInteractionCodeForTokens(response.remediations[IdxRemediation.Type.ISSUE]!!)) {
-                is OidcClientResult.Error -> {
-                    methodChannelResult.error(
-                        "TOKEN ERROR",
-                        result.exception.message,
-                        result.exception.cause?.message
-                    )
-                    return
-                }
+        println("login with Google started")
 
-                is OidcClientResult.Success -> {
-                    CredentialBootstrap.defaultCredential().storeToken(result.result)
-                    val tokenMap = mapOf(
-                        "accessToken" to result.result.accessToken,
-                        "userId" to result.result.idToken!!
-                    )
-                    methodChannelResult.success(tokenMap)
-                    return
-
-                }
-                else -> {
-                    handleRegisterWithGoogleResponse(
-                        response,
-                        methodChannelResult,
-                        context, flow
-                    )
-                }
-            }
-            return
-        }
         val redirectRemediation = response.remediations[IdxRemediation.Type.REDIRECT_IDP]
         val idpCapability = redirectRemediation?.capabilities?.get<IdxIdpCapability>()
 
         if (idpCapability != null) {
+            println("Got remediation")
             try {
                 val redirectUri = Uri.parse(idpCapability.redirectUrl.toString())
                 val browserIntent = Intent(Intent.ACTION_VIEW, redirectUri)

@@ -9,6 +9,7 @@ import kotlinx.coroutines.*
 class SocialRedirectActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        println("triggred activity")
         val intent = Intent(this, this::class.java)
         intent.action = "SocialRedirect"
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -21,6 +22,7 @@ class SocialRedirectActivity : AppCompatActivity() {
     public override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
         if (intent?.action == "SocialRedirect") {
+            println("initiale fetch token")
             intent.data?.let {
                 val scope = CoroutineScope(Dispatchers.IO + Job())
                 scope.launch {
