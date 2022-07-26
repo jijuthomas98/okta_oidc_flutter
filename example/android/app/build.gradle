@@ -40,7 +40,9 @@ android {
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        manifestPlaceholders += [appAuthRedirectScheme: "com.oktaOidcFlutter"]
+        manifestPlaceholders += [
+            "appAuthRedirectScheme": "com.magnifi.app.staging"
+            ]
     }
 
     buildTypes {
@@ -49,6 +51,9 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
         }
+    }
+    packagingOptions{
+        exclude 'META-INF/okta/version.properties'
     }
 }
 

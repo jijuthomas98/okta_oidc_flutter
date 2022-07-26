@@ -1,7 +1,7 @@
 package com.jiju.thomas.okta_oidc_flutter.utils;
 
 public class Errors {
-    public static final String notConfigured =  "OktaOidc client isn't configured, check if you have created a configuration with createConfig";
+    public static final String notConfigured = "OktaOidc client isn't configured, check if you have created a configuration with createConfig";
     public static final String noView = "No current view exists";
     public static final String noIdToken = "Id token does not exist";
     public static final String oktaOidcError = "Okta Oidc error";

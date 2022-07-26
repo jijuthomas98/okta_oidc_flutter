@@ -5,16 +5,17 @@ import android.content.Context;
 
 import androidx.annotation.NonNull;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jiju.thomas.okta_oidc_flutter.idxOperations.Authentication;
 import com.jiju.thomas.okta_oidc_flutter.operations.ConfigOktaClient;
 import com.jiju.thomas.okta_oidc_flutter.operations.Auth;
 import com.jiju.thomas.okta_oidc_flutter.utils.AvailableMethods;
-import com.jiju.thomas.okta_oidc_flutter.utils.Errors;
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaRequestParameters;
-import com.okta.oidc.Tokens;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -24,122 +25,124 @@ import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
-/** OktaOidcFlutterPlugin */
+/**
+ * OktaOidcFlutterPlugin
+ */
 public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
-  private MethodChannel channel;
-  private Activity mainActivity;
-  private Context context = null;
+    public MethodChannel channel;
+    private Activity mainActivity;
+    public static Context context = null;
+    public static MethodChannel.Result methodResult;
 
-
-
-  //Flutter Engine overrides
-  @Override
-  public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "okta_oidc_flutter");
-    context = flutterPluginBinding.getApplicationContext();
-    channel.setMethodCallHandler(this);
-  }
-
-  @Override
-  public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-    Tokens tokens;
-    ObjectMapper mapper = new ObjectMapper();
-    switch (call.method){
-      case  AvailableMethods
-              .CREATE_CONFIG:
-        final String clientId = call.argument("clientId");
-        final String redirectUri = call.argument("redirectUri");
-        final String endSessionRedirectUri = call.argument("endSessionRedirectUri");
-        final String discoveryUri = call.argument("discoveryUri");
-        final List<String> scopes = call.argument("scopes");
-        final boolean requireHardwareBackedKeyStore = Boolean.FALSE.equals(call.argument("requireHardwareBackedKeyStore"));
-        OktaRequestParameters oktaRequestParameters = new OktaRequestParameters(
-                clientId,
-                redirectUri,
-                endSessionRedirectUri,
-                discoveryUri,
-                scopes,
-                requireHardwareBackedKeyStore);
-
-        ConfigOktaClient.create(oktaRequestParameters,context);
-
-      case AvailableMethods.SIGN_IN:
-        tokens = Auth.webSignIn(mainActivity);
-        try {
-         result.success( mapper.writeValueAsString(tokens));
-        } catch (JsonProcessingException e) {
-          e.printStackTrace();
-        }
-
-      case AvailableMethods.SIGN_IN_WITH_CREDENTIAL:
-        final String email = call.argument("email");
-        final String password = call.argument("password");
-        final String orgDomain = call.argument("orgDomain");
-        tokens = Auth.signInWithCredentials(email, password, orgDomain);
-        try {
-          result.success( mapper.writeValueAsString(tokens));
-        } catch (JsonProcessingException e) {
-          e.printStackTrace();
-        }
-
-      case AvailableMethods.SIGN_OUT:
-      boolean isSignedOut = Auth.signOut(mainActivity);
-      result.success(isSignedOut);
-
-      case AvailableMethods.IS_AUTHENTICATED:
-        boolean isAuthenticated = Auth.isAuthenticated();
-        result.success(isAuthenticated);
-
-      case  AvailableMethods.CLEAR_TOKENS:
-      boolean isTokenCleared = Auth.clearTokens();
-      result.success(isTokenCleared);
-
-      case AvailableMethods.REFRESH_TOKENS:
-      tokens = Auth.refreshTokens();
-      try {
-        result.success( mapper.writeValueAsString(tokens));
-      } catch (JsonProcessingException e) {
-        e.printStackTrace();
-      }
-
-      default:
-        result.success(Errors.genericError);
+    // Flutter Engine overrides
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
+        channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "okta_oidc_flutter");
+        context = flutterPluginBinding.getApplicationContext();
+        channel.setMethodCallHandler(this);
     }
 
-    if (call.method.equals("getPlatformVersion")) {
-      result.success("Testing method channel");
-    } else {
-      result.notImplemented();
+    @Override
+    public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+        methodResult = result;
+        switch (call.method) {
+            // Create Okta Config
+            case AvailableMethods.CREATE_CONFIG:
+                try {
+                    ArrayList arguments = (ArrayList) call.arguments;
+                    HashMap<String, String> argMap = new HashMap<String, String>(
+                            (Map<String, String>) arguments.get(0));
+                    final String clientId = argMap.get("clientId");
+                    final String redirectUri = argMap.get("redirectUri");
+                    final String endSessionRedirectUri = argMap.get("endSessionRedirectUri");
+                    final String discoveryUri = argMap.get("discoveryUri");
+                    final List<String> scopes = new ArrayList<String>(Arrays.asList(argMap.get("scopes").split(",")));
+                    final Boolean requireHardwareBackedKeyStore = Boolean
+                            .parseBoolean(argMap.get("requireHardwareBackedKeyStore"));
+
+                    OktaRequestParameters oktaRequestParameters = new OktaRequestParameters(
+                            clientId,
+                            redirectUri,
+                            endSessionRedirectUri,
+                            discoveryUri,
+                            scopes, requireHardwareBackedKeyStore);
+                    Authentication.INSTANCE.init(result);
+                    ConfigOktaClient.create(oktaRequestParameters, context, result);
+                } catch (Exception e) {
+                    result.error("1", e.getMessage(), e.getStackTrace());
+                }
+                break;
+            // Sign in with Credentials
+            case AvailableMethods.SIGN_IN_WITH_CREDENTIAL:
+                ArrayList arguments = (ArrayList) call.arguments;
+                HashMap<String, String> argMap = new HashMap<String, String>((Map<String, String>) arguments.get(0));
+                final String email = argMap.get("email");
+                final String password = argMap.get("password");
+                assert password != null;
+                assert email != null;
+                Authentication.INSTANCE.signInWithCredentials(email, password, result, context);
+                break;
+            case AvailableMethods.SIGN_OUT:
+                Authentication.INSTANCE.logout(result,context);
+                break;
+            case AvailableMethods.WEB_SIGN_IN:
+                ArrayList argument = (ArrayList) call.arguments;
+                HashMap<String, String> arg = new HashMap<String, String>((Map<String, String>) argument.get(0));
+                final String idp = arg.get("idp");
+                Auth.signInWithBrowser(idp, mainActivity, result);
+                break;
+            case AvailableMethods.FORGOT_PASSWORD:
+//                ArrayList forgotPasswordArguments = (ArrayList) call.arguments;
+//                HashMap<String, String> forgotPasswordMap = new HashMap<String, String>(
+//                        (Map<String, String>) forgotPasswordArguments.get(0));
+//                final String orgDom = forgotPasswordMap.get("orgDomain");
+//                final String userName = forgotPasswordMap.get("username");
+//                Auth.forgotPassword(orgDom, userName, result);
+                break;
+            case AvailableMethods.REGISTER_WITH_CREDENTIAL:
+                ArrayList registerUserArguments = (ArrayList) call.arguments;
+                HashMap<String, String> registerUserArgMap = new HashMap<String, String>(
+                        (Map<String, String>) registerUserArguments.get(0));
+                final String registerEmail = registerUserArgMap.get("email");
+                final String registerPassword = registerUserArgMap.get("password");
+
+                Authentication.INSTANCE.registerUserWithCredentials(registerEmail, registerPassword, result, context);
+                break;
+            case AvailableMethods.REGISTER_WITH_GOOGLE:
+                Authentication.INSTANCE.registerUserWithGoogle(result, context);
+                break;
+            default:
+                result.notImplemented();
+                break;
+        }
     }
-  }
 
-  @Override
-  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-    channel.setMethodCallHandler(null);
-  }
+    @Override
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+        channel.setMethodCallHandler(null);
+    }
 
+    // Activity aware overrides
+    @Override
+    public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+        mainActivity = binding.getActivity();
+    }
 
-  //Activity aware overrides
-  @Override
-  public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
-    mainActivity = binding.getActivity();
-  }
+    @Override
+    public void onDetachedFromActivityForConfigChanges() {
+        this.mainActivity = null;
+    }
 
-  @Override
-  public void onDetachedFromActivityForConfigChanges() {
-    this.mainActivity = null;
-  }
+    @Override
+    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+        this.mainActivity = binding.getActivity();
+    }
 
-  @Override
-  public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
-   this.mainActivity = binding.getActivity();
-  }
+    @Override
+    public void onDetachedFromActivity() {
+        this.mainActivity = null;
+    }
 
-  @Override
-  public void onDetachedFromActivity() {
-    this.mainActivity = null;
-  }
-
-  //helper method
+    // helper method
 
 }
