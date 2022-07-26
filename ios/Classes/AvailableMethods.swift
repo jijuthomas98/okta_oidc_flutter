@@ -7,7 +7,6 @@
 
 import Foundation
 import OktaOidc
-import OktaAuthSdk
 import OktaIdx
 import UIKit
 import AuthenticationServices
@@ -21,24 +20,33 @@ class AvailableMethods{
     private weak var presentationContext: ASWebAuthenticationPresentationContextProviding?
     var idxFlow: InteractionCodeFlow?
     private var webAuthSession: ASWebAuthenticationSession?
-    var credsStorage: Credential?
+    let oktaProcessors: OktaProcessors = OktaProcessors()
     
-    
-    
-    func isAuthenticated(callback: ((Bool) -> (Void))?) {
-        if  let oktaOidc = oktaOidc,
-            let _ = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)?.accessToken {
-            self.authStateManager = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)
-            callback?(true)
+    // MARK: Initialize Okta
+    func initOkta(configuration: [String:String], callback: ((Error?) -> (Void))) {
+        do {
+            let oktaConfiguration: OktaOidcConfig = try OktaOidcConfig(with: configuration);
+            let idx: InteractionCodeFlow = InteractionCodeFlow(issuer: URL(string: oktaConfiguration.issuer)!, clientId: oktaConfiguration.clientId, scopes: oktaConfiguration.scopes, redirectUri: oktaConfiguration.redirectUri)
+            self.idxFlow = idx
+            self.oktaOidc = try OktaOidc(configuration: oktaConfiguration);
+            
+        } catch let error {
+            callback(error)
             return
         }
-        callback?(false)
+        if let oktaOidc = oktaOidc,
+           let _ = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)?.refreshToken {
+            self.authStateManager = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)
+        }
+        
+        callback(nil)
     }
     
     
+    // MARK: Logout from OKTA
     func logOut( callback: @escaping ((Error?) -> (Void))){
         guard let idxFlow = self.idxFlow,
-              let   credsStorage = self.credsStorage else {
+              let   credsStorage = oktaProcessors.credsStorage else {
             callback(nil)
             return
         }
@@ -79,38 +87,18 @@ class AvailableMethods{
         
     }
     
-    func initOkta(configuration: [String:String], callback: ((Error?) -> (Void))) {
-        do {
-            let oktaConfiguration: OktaOidcConfig = try OktaOidcConfig(with: configuration);
-            let idx: InteractionCodeFlow = InteractionCodeFlow(issuer: URL(string: oktaConfiguration.issuer)!, clientId: oktaConfiguration.clientId, scopes: oktaConfiguration.scopes, redirectUri: oktaConfiguration.redirectUri)
-            self.idxFlow = idx
-            self.oktaOidc = try OktaOidc(configuration: oktaConfiguration);
-            
-        } catch let error {
-            callback(error)
-            return
-        }
-        if let oktaOidc = oktaOidc,
-           let _ = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)?.refreshToken {
-            self.authStateManager = OktaOidcStateManager.readFromSecureStorage(for: oktaOidc.configuration)
-        }
-        
-        callback(nil)
-    }
     
-    func signInWithCreds(Username: String!, Password: String!, callback: @escaping (([String:String]?,Error?) -> Void)){
+    //MARK: Login with Creds
+    func signInWithCreds(Username: String!, Password: String!,NewPassword: String?, callback: @escaping (([String:String]?,Error?) -> Void)){
         
         guard let idx = idxFlow else {
             return
         }
         
-        
-        
-        
         idx.start { result in
-            switch result {
-            case .success(let response):
-                guard let remediation = response.remediations[.identify],
+            let idxResult : Response? = self.oktaProcessors.processRemediation(response: result, callback: callback)
+            if(idxResult != nil){
+                guard let remediation = idxResult!.remediations[.identify],
                       let usernameField = remediation["identifier"],
                       let rememberMeField = remediation["rememberMe"]
                 else {
@@ -120,9 +108,9 @@ class AvailableMethods{
                 rememberMeField.value = false
                 
                 remediation.proceed { remediationResponse in
-                    switch remediationResponse {
-                    case .success(let successResponse):
-                        guard let remediation = successResponse.remediations[.challengeAuthenticator],
+                    let remediationResult : Response? =      self.oktaProcessors.processRemediation(response: remediationResponse, callback: callback)
+                    if(remediationResult != nil){
+                        guard let remediation = remediationResult!.remediations[.challengeAuthenticator],
                               let passwordField = remediation["credentials.passcode"]
                         else {
                             return
@@ -131,58 +119,40 @@ class AvailableMethods{
                         passwordField.value = Password
                         
                         remediation.proceed { passwordResponse in
-                            switch passwordResponse {
-                            case .success(let successPasswordResponse):
-                                print(successPasswordResponse)
-                                guard successPasswordResponse.isLoginSuccessful
-                                else {
+                            let passwordResult : Response? = self.oktaProcessors.processRemediation(response: passwordResponse, callback: callback)
+                            if(passwordResult != nil){
+                                let isPasswordReEnroll : Bool = passwordResult!.remediations[.reenrollAuthenticator] != nil
+                                if(isPasswordReEnroll && NewPassword == nil){
+                                    callback(["reEnroll": "true"], nil)
                                     return
                                 }
-                                successPasswordResponse.exchangeCode { tokenResult in
-                                    switch tokenResult{
-                                    case .success(let tokenResponse):
-                                        let tokens = tokenResponse
-                                        
-                                        self.saveCreds(token: tokens, callback: callback)
-                                        callback([
-                                            "accessToken": tokens.accessToken
-                                        ],nil)
-                                    case .failure(let error):
-                                        callback(nil, error)
+                                if(isPasswordReEnroll && NewPassword != nil){
+                                    guard let remediation = passwordResult!.remediations[.reenrollAuthenticator],
+                                          let passwordField = remediation["credentials.passcode"]
+                                    else {
+                                        return
                                     }
+                                    passwordField.value = NewPassword
+                                    remediation.proceed { passwordReEnrollResponse in
+                                        let passwordReEnrollSuccess : Response? = self.oktaProcessors.processRemediation(response: passwordReEnrollResponse, callback: callback)
+                                        if(passwordReEnrollSuccess != nil){
+                                            self.oktaProcessors.exchangeTokenFromResponse(response: passwordReEnrollSuccess!, callback: callback)
+                                        }
+                                    }
+                                }else{
+                                    self.oktaProcessors.exchangeTokenFromResponse(response: passwordResult!, callback: callback)
                                 }
-                            case .failure(let failurePasswordResponse):
-                                callback(nil, failurePasswordResponse)
-                                print(failurePasswordResponse)
-                                
-                                
                             }
                         }
-                        
-                        
-                        
-                    case .failure(let failureResponse):
-                        callback(nil, failureResponse)
                     }
                 }
-                
-            case .failure(let error):
-                
-                callback(nil, error)
-                
             }
         }
     }
     
-    func saveCreds(token: Token, callback: @escaping (([String:String]?,Error?) -> Void)){
-        do{
-            try self.credsStorage = Credential.store(token)
-        }catch{
-            callback(nil, error)
-        }
-    }
     
     
+    //MARK: Register with Creds
     func registerWithCreds(Username: String!, Password: String!, callback: @escaping (([String:String]?,Error?) -> Void)){
         guard let oktaOidc = oktaOidc else {
             return
@@ -194,12 +164,9 @@ class AvailableMethods{
             redirectUri: oktaOidc.configuration.redirectUri)
         
         flow.start { result in
-            switch result {
-            case .success(let response):
-                self.handleRegistrationSuccess(username: Username, password: Password, response: response, callback: callback)
-            case .failure(let error):
-                callback(nil, error)
-                
+            let idxResult : Response? = self.oktaProcessors.processRemediation(response: result, callback: callback)
+            if(idxResult != nil){
+                self.handleRegistrationSuccess(username: Username, password: Password, response: idxResult!, callback: callback)
             }
         }
         
@@ -207,22 +174,7 @@ class AvailableMethods{
     
     
     
-    func forgotPassword(Username: String!, callback: @escaping (([String:String]?,Error?) -> Void)){
-        guard let oktaOidc = oktaOidc else {
-            return
-        }
-        let domainUrl: URL = URL(string: oktaOidc.configuration.issuer)!
-        OktaAuthSdk.recoverPassword(with: domainUrl, username: Username, factorType: OktaRecoveryFactors.email) { authStatus in
-            let successStatus: String = authStatus.factorResult!.rawValue
-            
-            callback([
-                "status":  successStatus], nil)
-        } onError: { error in
-            callback(nil, error)
-        }
-    }
-    
-    
+    //MARK: Browser Sign in
     func signInWithBrowser(callback: @escaping (([String:String]?,Error?) -> Void), idp: String, from presentationContext: ASWebAuthenticationPresentationContextProviding? = nil) {
         guard let idxFlow = idxFlow else {
             callback(nil, nil)
@@ -233,11 +185,11 @@ class AvailableMethods{
         
         
         idxFlow.start { result in
-            switch result {
-            case .success(let response):
+            let idxResult : Response? = self.oktaProcessors.processRemediation(response: result, callback: callback)
+            if(idxResult != nil){
                 var socialRemedation: Remediation?
                 
-                response.remediations.forEach { item in
+                idxResult!.remediations.forEach { item in
                     if(item.capabilities.isEmpty){
                         return
                     }
@@ -245,7 +197,6 @@ class AvailableMethods{
                         socialRemedation = item
                     }
                 }
-                
                 guard let remediation = socialRemedation else {
                     return
                 }
@@ -254,79 +205,11 @@ class AvailableMethods{
                 DispatchQueue.main.async {
                     self.webLogin(idxflow: idxFlow , url: socialCapabilites!.redirectUrl, callback: callback)
                 }
-                
-                
-                
-            case .failure(let error):
-                callback(nil, error)
-                
             }
         }
         
     }
     
-    
-    func getUser(callback: @escaping ((String?, Error?)-> (Void))) {
-        authStateManager?.getUser { response, error in
-            guard let response = response else {
-                let alert = UIAlertController(title: "Error", message: error?.localizedDescription, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                callback(nil, error)
-                return
-            }
-            if let jsonData = try? JSONSerialization.data(withJSONObject: response, options: .prettyPrinted) {
-                let jsonString = String(data: jsonData, encoding: .ascii)
-                callback(jsonString, nil)
-            } else {
-                callback(nil, error)
-            }
-        }
-    }
-    
-    func getAccessToken(callback: ((String?) -> (Void))? ) {
-        if let accessToken = authStateManager?.accessToken {
-            callback?(accessToken)
-        }
-        else { callback?(nil) }
-    }
-    
-    func handleStatus(status: OktaAuthStatus, callback: @escaping (([String:String]?,Error?) -> Void)) {
-        let currentStatus = status
-        
-        switch status.statusType {
-        case .success:
-            self.handleSuccessStatus(status: status, callback: callback)
-            
-        case .passwordWarning,.passwordExpired,.MFARequired,.MFAEnroll,.MFAEnrollActivate,.recoveryChallenge, .recovery,.passwordReset, .lockedOut,.unauthenticated,.unknown(_),
-                .MFAChallenge:
-            print("current Status: \(currentStatus)")
-            
-        }
-        
-    }
-    
-    func handleSuccessStatus(status: OktaAuthStatus,callback: @escaping (( [String:String]?,Error?) -> Void)) {
-        let successStatus: OktaAuthStatusSuccess = status as! OktaAuthStatusSuccess
-        let oidcClient = oktaOidc
-        // Okta OIDC
-        oidcClient!.authenticate(withSessionToken: successStatus.sessionToken!,
-                                 callback: { [weak self] authStateManager, error in
-            if let error = error {
-                
-                self?.authStateManager = nil
-                callback(nil, error)
-                return
-            }
-            authStateManager!.writeToSecureStorage()
-            
-            callback(
-                [
-                    "accessToken": authStateManager!.accessToken!,
-                    "userId":successStatus.user!.id!,
-                    "sessionToken": successStatus.sessionToken!
-                ], nil)
-        })
-    }
     
     
     func handleRegistrationSuccess(username:String, password: String, response: Response,callback: @escaping (( [String:String]?,Error?) -> Void))  {
@@ -338,100 +221,65 @@ class AvailableMethods{
             return
         }
         remediation.proceed { remediationResponse in
-            switch remediationResponse {
-            case .success(let successResponse):
-                guard let remediation = successResponse.remediations[.enrollProfile],
+            let remediationResponseSuccess : Response? = self.oktaProcessors.processRemediation(response: remediationResponse, callback: callback)
+            if(remediationResponseSuccess != nil){
+                guard let remediation = remediationResponseSuccess!.remediations[.enrollProfile],
                       
                         let emailField = remediation["userProfile.email"],
                       let selfRoleField = remediation["userProfile.magnifi_self_role"]
                 else {
-                    successResponse.cancel()
+                    remediationResponseSuccess!.cancel()
                     return;
                 }
-                
                 emailField.value = username
                 selfRoleField.value = "Individual Investor"
                 
-                
                 remediation.proceed { secondResult in
-                    switch secondResult{
-                    case .success(let secondResponse):
-                        guard let remediation = secondResponse.remediations[.selectAuthenticatorEnroll],
+                    let secondResultSuccess : Response? = self.oktaProcessors.processRemediation(response: secondResult, callback: callback)
+                    if(secondResultSuccess != nil){
+                        guard let remediation = secondResultSuccess!.remediations[.selectAuthenticatorEnroll],
                               let authenticatorField = remediation["authenticator"],
                               let authenticationOption = authenticatorField.options?.first(where: { option in
                                   option.label == "Password"
                               })
                         else{
-                            successResponse.cancel()
+                            remediationResponseSuccess!.cancel()
                             return
                             
                         }
                         authenticatorField.selectedOption = authenticationOption
                         remediation.proceed { authOptionResult in
-                            switch authOptionResult{
-                            case .success(let authOptionResponse):
-                                
-                                guard let remediation = authOptionResponse.remediations[.enrollAuthenticator],
+                            let authOptionResultSuccess : Response? = self.oktaProcessors.processRemediation(response: authOptionResult, callback: callback)
+                            if(authOptionResultSuccess != nil){
+                                guard let remediation = authOptionResultSuccess!.remediations[.enrollAuthenticator],
                                       let passcode = remediation["credentials.passcode"]
                                 else{
-                                    authOptionResponse.cancel()
+                                    authOptionResultSuccess!.cancel()
                                     return}
                                 passcode.value = password
                                 remediation.proceed { passcodeResult in
-                                    switch passcodeResult{
-                                    case .success(let passcodeResponse):
-                                        guard let remediation = passcodeResponse.remediations[.skip]
+                                    let passcodeResultSuccess : Response? = self.oktaProcessors.processRemediation(response: passcodeResult, callback: callback)
+                                    if(passcodeResultSuccess != nil){
+                                        guard let remediation = passcodeResultSuccess!.remediations[.skip]
                                         else{
-                                            passcodeResponse.cancel()
-                                            return}
+                                            passcodeResultSuccess!.cancel()
+                                            return
+                                            
+                                        }
                                         remediation.proceed { skipResponse in
-                                            switch skipResponse{
-                                            case .success(let finalResponse):
-                                                guard finalResponse.isLoginSuccessful
-                                                else {
-                                                    finalResponse.cancel()
-                                                    return
-                                                }
-                                                finalResponse.exchangeCode { tokenResult in
-                                                    switch tokenResult{
-                                                    case .success(let tokenResponse):
-                                                        let tokens = tokenResponse
-                                                        callback([
-                                                            "accessToken": tokens.accessToken,
-                                                            "userId":tokens.id
-                                                        ],nil)
-                                                    case .failure(let error):
-                                                        callback(nil, error)
-                                                    }
-                                                }
-                                            case .failure(let error):
-                                                callback(nil, error)
+                                            let skipResponseSuccess : Response? = self.oktaProcessors.processRemediation(response: skipResponse, callback: callback)
+                                            if(skipResponseSuccess != nil){
+                                                self.oktaProcessors.exchangeTokenFromResponse(response: skipResponseSuccess!, callback: callback)
                                             }
                                         }
-                                    case .failure(let error):
-                                        callback(nil, error)
-                                        return
                                     }
                                 }
-                            case .failure(let error):
-                                callback(nil, error)
-                                return
                             }
                         }
-                    case .failure(let error):
-                        successResponse.cancel()
-                        callback(nil, error)
-                        return
                     }
-                    
                 }
-            case .failure(let error):
-                callback(nil, error)
-                return
-                
             }
         }
-        
     }
     
     func webLogin(idxflow: InteractionCodeFlow , url : URL, callback: @escaping (([String:String]?,Error?) -> Void)) {
@@ -452,24 +300,7 @@ class AvailableMethods{
                     idxflow.resume { resumeResponse in
                         switch resumeResponse{
                         case .success(let resume):
-                            resume.exchangeCode { tokenResult in
-                                switch tokenResult{
-                                case .success(let tokens):
-                                    let token = tokens
-                                    self!.saveCreds(token: tokens, callback: callback)
-                                    print([
-                                        "accessToken": token.accessToken,
-                                        "userId":token.id
-                                    ])
-                                    callback([
-                                        "accessToken": token.accessToken,
-                                        "userId":token.id
-                                    ],nil)
-                                    
-                                case .failure(let error):
-                                    callback(nil, error)
-                                }
-                            }
+                            self!.oktaProcessors.exchangeTokenFromResponse(response: resume, callback: callback)
                             break
                             
                         case .failure(let error):
@@ -499,10 +330,7 @@ class AvailableMethods{
         session.start()
         self.webAuthSession = session
         
-        
     }
-    
-    
 }
 
 

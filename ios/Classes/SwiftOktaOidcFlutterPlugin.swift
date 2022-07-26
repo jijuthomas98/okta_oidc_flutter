@@ -1,7 +1,6 @@
 import Flutter
 import UIKit
 import OktaOidc
-import OktaAuthSdk
 import OktaIdx
 
 
@@ -15,11 +14,12 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin , ASWebAuthenti
     }
     
     public func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-            return ASPresentationAnchor()
-        }
+        return ASPresentationAnchor()
+    }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+            //MARK: Create Config
         case "CREATE_CONFIG":
             guard let oktaInfo: Dictionary = call.arguments as? [String: Any] else {
                 result(-1);
@@ -47,10 +47,6 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin , ASWebAuthenti
                 "redirectUri": redirectUrl,
             ] ;
             
-            
-            
-            
-            
             return availableMethods.initOkta(configuration: oktaConfigMap, callback: { error in
                 if(error != nil) {
                     result(error);
@@ -58,16 +54,17 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin , ASWebAuthenti
                 }
                 result(true);
             });
-            
+            //MARK: Sign in with credential
         case "SIGN_IN_WITH_CREDENTIAL":
-            guard let creds: Dictionary = call.arguments as? [String: String] else {
+            guard let creds: Dictionary = call.arguments as? [String?: String?] else {
                 result(-1);
                 return;
             }
-            let username: String = creds["username"]! as String;
-            let password: String = creds["password"]! as String;
+            let username: String = creds["username"]!! as String;
+            let password: String = creds["password"]!! as String;
+            let newPassword : String? = creds["newPassword"] ?? nil;
             
-            availableMethods.signInWithCreds(Username: username, Password: password,callback: {token,error  in
+            availableMethods.signInWithCreds(Username: username, Password: password, NewPassword: newPassword, callback: {token,error  in
                 if(error != nil) {
                     let flutterError: FlutterError = FlutterError(code: "Sign_In_Error", message: error?.localizedDescription, details: error.debugDescription);
                     result(flutterError);
@@ -76,6 +73,8 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin , ASWebAuthenti
                 result(token);
             });
             break
+            
+            //MARK: Register with credential
         case "REGISTER_WITH_CREDENTIAL":
             guard let creds: Dictionary = call.arguments as? [String: String] else {
                 result(-1);
@@ -93,6 +92,7 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin , ASWebAuthenti
                 result(token);
             });
             break
+            //MARK: Web sign in
         case "WEB_SIGN_IN":
             guard let data: String = call.arguments as? String else {
                 result(-1);
@@ -102,34 +102,19 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin , ASWebAuthenti
             
             availableMethods.signInWithBrowser(
                 callback: {token,error  in
-                if(error != nil) {
-                    let flutterError: FlutterError = FlutterError(code: "Web_In_Error", message: error?.localizedDescription, details: error.debugDescription);
-                    result(flutterError);
-                    return
-                }
-                result(token);
-            },
+                    if(error != nil) {
+                        let flutterError: FlutterError = FlutterError(code: "Web_In_Error", message: error?.localizedDescription, details: error.debugDescription);
+                        result(flutterError);
+                        return
+                    }
+                    result(token);
+                },
                 idp: idp,
                 from: self
             );
             break
-        case "FORGOT_PASSWORD":
-            guard let creds: Dictionary = call.arguments as? [String: String] else {
-                result(-1);
-                return;
-            }
-            let username: String = creds["username"]! as String;
             
-            availableMethods.forgotPassword(Username: username,callback: {status,error  in
-                if(error != nil) {
-                    let flutterError: FlutterError = FlutterError(code: "Forgot_Password_Error", message: error?.localizedDescription, details: error.debugDescription);
-                    result(flutterError);
-                    return
-                }
-                result(status);
-            });
-            break
-            
+            //MARK: Sign out
         case "SIGN_OUT":
             availableMethods.logOut( callback: { error in
                 if(error != nil) {
@@ -148,6 +133,6 @@ public class SwiftOktaOidcFlutterPlugin: NSObject, FlutterPlugin , ASWebAuthenti
         }
     }
     
-  
+    
 }
 

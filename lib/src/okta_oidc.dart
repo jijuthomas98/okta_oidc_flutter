@@ -29,9 +29,10 @@ class OktaOidcFlutter {
     }
   }
 
-  Future<OktaTokens> signInWithCredentials({
+  Future<OktaResponse> signInWithCredentials({
     required String email,
     required String password,
+    String? newPassword,
   }) async {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
@@ -46,14 +47,14 @@ class OktaOidcFlutter {
     } else {
       tokens = await _channel.invokeMethod(
         "SIGN_IN_WITH_CREDENTIAL",
-        {'username': email, 'password': password},
+        {'username': email, 'password': password, 'newPassword': newPassword},
       );
     }
 
-    return OktaTokens.parse(tokens);
+    return OktaResponse.parse(tokens);
   }
 
-  Future<OktaTokens> sso({
+  Future<OktaResponse> sso({
     required String idp,
   }) async {
     if (isInitialized == false) {
@@ -70,7 +71,7 @@ class OktaOidcFlutter {
     } else {
       tokens = await _channel.invokeMethod("WEB_SIGN_IN", idp);
     }
-    return OktaTokens.parse(tokens);
+    return OktaResponse.parse(tokens);
   }
 
   /// Sign out by revoking okta tokens
@@ -101,7 +102,7 @@ class OktaOidcFlutter {
     }
   }
 
-  Future<OktaTokens> registerWithCreds(String email, String password) async {
+  Future<OktaResponse> registerWithCreds(String email, String password) async {
     // ignore: prefer_typing_uninitialized_variables
     var tokens;
     if (Platform.isAndroid) {
@@ -118,10 +119,10 @@ class OktaOidcFlutter {
       });
     }
 
-    return OktaTokens.parse(tokens);
+    return OktaResponse.parse(tokens);
   }
 
-  Future<OktaTokens> registerWithGoogle() async {
+  Future<OktaResponse> registerWithGoogle() async {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
     }
@@ -132,6 +133,6 @@ class OktaOidcFlutter {
       tokens = await _channel.invokeMethod("REGISTER_WITH_GOOGLE");
     }
     print(tokens);
-    return OktaTokens.parse(tokens);
+    return OktaResponse.parse(tokens);
   }
 }
