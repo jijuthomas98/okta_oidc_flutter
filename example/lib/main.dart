@@ -20,8 +20,8 @@ class _MyAppState extends State<MyApp> {
 
     OktaOidcFlutter.instance.initOkta(
       InitOkta(
-        clientId: '0oa1m1yl1txz8Zyyn697',
-        issuer: 'https://magnifi.okta.com/oauth2/default',
+        clientId: '0oa1k4uyv06twnAW8697',
+        issuer: 'https://magnifi-dev.okta.com/oauth2/default',
         endSessionRedirectUri: 'com.magnifi.app.staging:/app',
         redirectUrl: 'com.magnifi.app.staging:/app',
         scopes: ['openid', 'profile', 'email', 'offline_access'],
@@ -43,8 +43,8 @@ class _MyAppState extends State<MyApp> {
               onPressed: () async {
                 OktaResponse oktaResposne =
                     await OktaOidcFlutter.instance.signInWithCredentials(
-                  email: 're@re.com',
-                  password: 'Magnifi@123456',
+                  email: 'jijujoel@tifin.com',
+                  password: '7A9+qkL+',
                 );
                 if (oktaResposne.reEnroll) {
                   showDialog(
@@ -63,9 +63,9 @@ class _MyAppState extends State<MyApp> {
                                     OktaResponse oktaResposne =
                                         await OktaOidcFlutter.instance
                                             .signInWithCredentials(
-                                      email: 're@re.com',
-                                      password: '3#x8LK*c',
-                                      newPassword: 'Magnifi@123456',
+                                      email: 'jijujoel@tifin.com',
+                                      password: '7A9+qkL+',
+                                      newPassword: 'JTDFA9+q123L+@',
                                     );
 
                                     print(oktaResposne.accessToken);

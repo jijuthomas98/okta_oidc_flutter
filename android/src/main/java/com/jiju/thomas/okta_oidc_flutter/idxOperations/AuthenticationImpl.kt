@@ -7,11 +7,13 @@ import android.content.Intent
 import android.net.Uri
 import com.okta.authfoundation.client.OidcClientResult
 import com.okta.authfoundation.credential.RevokeTokenType
+import com.okta.authfoundation.credential.Token
 import com.okta.authfoundationbootstrap.CredentialBootstrap
 import com.okta.idx.kotlin.client.IdxFlow
 import com.okta.idx.kotlin.dto.IdxIdpCapability
 import com.okta.idx.kotlin.dto.IdxRemediation
 import com.okta.idx.kotlin.dto.IdxResponse
+import com.okta.oidc.net.response.TokenResponse
 import io.flutter.plugin.common.MethodChannel
 
 
@@ -86,6 +88,7 @@ object AuthenticationImpl {
         response: IdxResponse,
         email: String,
         password: String,
+        newPassword: String?,
         methodChannelResult: MethodChannel.Result,
         flow: IdxFlow?,
     ) {
@@ -141,10 +144,9 @@ object AuthenticationImpl {
                                 is OidcClientResult.Success -> {
                                     println("CHALLENGE_AUTHENTICATOR success")
                                     if (challengeAuthenticatorResponse.result.isLoginSuccessful) {
-                                        when (val tokenResponse =
-                                            flow.exchangeInteractionCodeForTokens(
-                                                challengeAuthenticatorResponse.result.remediations[IdxRemediation.Type.ISSUE]!!
-                                            )) {
+                                        val tokenResponse =
+                                            flow.exchangeInteractionCodeForTokens(challengeAuthenticatorResponse.result.remediations[IdxRemediation.Type.ISSUE]!!)
+                                        when(tokenResponse){
                                             is OidcClientResult.Error -> {
                                                 println("Exchange failed")
                                                 methodChannelResult.error(
@@ -173,8 +175,72 @@ object AuthenticationImpl {
                                                 println("challengeAuthenticatorResponse failed to run ISSUE")
                                             }
                                         }
-                                    }else{
-                                        println("NOT LOGIN")
+
+                                    }else if(challengeAuthenticatorResponse.result.remediations[IdxRemediation.Type.REENROLL_AUTHENTICATOR] != null){
+                                        if(newPassword == null){
+                                            val newPwdMap = mapOf("reEnroll" to true)
+                                            methodChannelResult.success(newPwdMap)
+                                            return
+                                        }else{
+                                            val reEnrollRemediation = challengeAuthenticatorResponse.result.remediations[IdxRemediation.Type.REENROLL_AUTHENTICATOR]
+                                            val newPasswordField =
+                                                reEnrollRemediation?.get("credentials.passcode")
+                                            if (newPasswordField != null) {
+                                                newPasswordField.value = newPassword
+                                            }
+                                            if(reEnrollRemediation != null){
+                                                when(val reEnrollResponse = flow.proceed(reEnrollRemediation)){
+                                                    is OidcClientResult.Error -> {
+                                                        println("reEnrollRemediation failed")
+                                                        methodChannelResult.error(
+                                                            "reEnrollRemediation ERROR",
+                                                            reEnrollResponse.exception.message,
+                                                            reEnrollResponse.exception.cause?.message,
+                                                        )
+                                                        return
+                                                    }
+                                                    is OidcClientResult.Success ->{
+                                                        println("reEnrollRemediation SUCCESS")
+                                                        if(reEnrollResponse.result.remediations[IdxRemediation.Type.ISSUE] != null){
+                                                            println("remediations of issue present.....")
+                                                            when(val reEnrollNewPwdResponse = flow.exchangeInteractionCodeForTokens(reEnrollResponse.result.remediations[IdxRemediation.Type.ISSUE]!!)){
+                                                                is OidcClientResult.Error -> {
+                                                                    println("Exchange failed")
+                                                                    methodChannelResult.error(
+                                                                        "TOKEN ERROR",
+                                                                        reEnrollNewPwdResponse.exception.message,
+                                                                        reEnrollNewPwdResponse.exception.cause?.message
+                                                                    )
+                                                                    return
+                                                                }
+                                                                is OidcClientResult.Success -> {
+                                                                    println("ISSUE success")
+                                                                    CredentialBootstrap.defaultCredential()
+                                                                        .storeToken(reEnrollNewPwdResponse.result)
+                                                                    val tokenMap =
+                                                                        mapOf(
+                                                                            "accessToken" to reEnrollNewPwdResponse.result.accessToken,
+                                                                            "userId" to reEnrollNewPwdResponse.result.idToken!!
+                                                                        )
+                                                                    methodChannelResult.success(
+                                                                        tokenMap
+                                                                    )
+                                                                    return
+                                                                }
+                                                                else -> {
+                                                                    println("challengeAuthenticatorResponse failed to run ISSUE")
+                                                                }
+                                                            }
+                                                        }else{
+                                                            methodChannelResult.error("E0000004","User not found","E0000004")
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    else{
+                                        println("NOT LOGIN -")
                                         methodChannelResult.error("E0000004","User not found","E0000004")
                                     }
                                 }
@@ -189,6 +255,8 @@ object AuthenticationImpl {
             }
         }
     }
+
+
 
     suspend fun handleRegisterWithCredentialsResponse(
         response: IdxResponse,

@@ -42,7 +42,7 @@ class OktaOidcFlutter {
     if (Platform.isAndroid) {
       tokens = await _channel
           .invokeMethod<Map<dynamic, dynamic>>("SIGN_IN_WITH_CREDENTIAL", [
-        {"email": email, "password": password}
+        {"email": email, "password": password, 'newPassword': newPassword}
       ]);
     } else {
       tokens = await _channel.invokeMethod(

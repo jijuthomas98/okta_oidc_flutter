@@ -30,25 +30,26 @@ object Authentication {
     ) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient(email, password,  methodChannelResult, false,context,false)
+            createCoroutineClient(email, password,  methodChannelResult, false,context,false,null)
         }
     }
 
     fun registerUserWithGoogle(methodChannelResult: MethodChannel.Result,context: Context) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient("", "", methodChannelResult, false,context,false)
+            createCoroutineClient("", "", methodChannelResult, false,context,false,null)
         }
     }
 
     fun signInWithCredentials(
         email: String,
         password: String,
+        newPassword: String?,
         methodChannelResult: MethodChannel.Result,context: Context
     ) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient(email, password,  methodChannelResult, true,context,false)
+            createCoroutineClient(email, password,  methodChannelResult, true,context,false,newPassword)
         }
     }
 
@@ -56,7 +57,7 @@ object Authentication {
     fun logout(methodChannelResult: MethodChannel.Result,context: Context) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient("","",methodChannelResult,false,context,true )
+            createCoroutineClient("","",methodChannelResult,false,context,true , null)
         }
     }
 
@@ -110,6 +111,7 @@ object Authentication {
         isSignIn: Boolean,
         context: Context,
         isLogoutRequest: Boolean,
+        newPassword:String?
     ) {
 
         when (
@@ -151,6 +153,7 @@ object Authentication {
                                 resumeResult.result,
                                 email,
                                 password,
+                                newPassword,
                                 methodChannelResult, flow
                             )
                         }else if(isLogoutRequest){

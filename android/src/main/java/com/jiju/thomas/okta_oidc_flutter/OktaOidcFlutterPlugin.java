@@ -78,9 +78,10 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 HashMap<String, String> argMap = new HashMap<String, String>((Map<String, String>) arguments.get(0));
                 final String email = argMap.get("email");
                 final String password = argMap.get("password");
+                final String newPassword = argMap.get("newPassword");
                 assert password != null;
                 assert email != null;
-                Authentication.INSTANCE.signInWithCredentials(email, password, result, context);
+                Authentication.INSTANCE.signInWithCredentials(email, password, newPassword,result, context);
                 break;
             case AvailableMethods.SIGN_OUT:
                 Authentication.INSTANCE.logout(result,context);
