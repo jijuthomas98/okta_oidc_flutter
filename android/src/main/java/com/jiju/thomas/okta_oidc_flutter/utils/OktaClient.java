@@ -6,9 +6,9 @@ import com.okta.oidc.clients.web.WebAuthClient;
 
 public class OktaClient {
     private final OIDCConfig config;
-    private WebAuthClient webAuthClient = null;
-    private AuthClient authClient = null;
-    private static OktaClient oktaInstance = null;
+    private final WebAuthClient webAuthClient;
+    private final AuthClient authClient;
+    private static OktaClient oktaInstance;
 
     private OktaClient(OIDCConfig config, WebAuthClient webAuthClient, AuthClient authClient) {
         this.config = config;

@@ -10,34 +10,50 @@ import com.okta.authfoundationbootstrap.CredentialBootstrap
 import com.okta.idx.kotlin.client.IdxFlow
 import com.okta.idx.kotlin.client.IdxFlow.Companion.createIdxFlow
 import com.okta.idx.kotlin.client.IdxRedirectResult
+import com.okta.idx.kotlin.dto.IdxResponse
 import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.*
-
 
 
 object Authentication {
     private var flow: IdxFlow? = null
     private lateinit var methodChannelResultForAuth: MethodChannel.Result
 
-    fun init( methodChannelResult: MethodChannel.Result) {
+
+    fun init(methodChannelResult: MethodChannel.Result) {
         methodChannelResultForAuth = methodChannelResult
     }
 
     fun registerUserWithCredentials(
         email: String,
         password: String,
-        methodChannelResult: MethodChannel.Result,context: Context
+        methodChannelResult: MethodChannel.Result
     ) {
+
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient(email, password,  methodChannelResult, false,context,false,null)
+            val result = createCoroutineClient(methodChannelResult)
+            if (result != null) {
+                AuthenticationImpl.handleRegisterWithCredentials(
+                    result,
+                    email,
+                    password,
+                    methodChannelResult, flow
+                )
+            }
         }
     }
 
-    fun registerUserWithGoogle(methodChannelResult: MethodChannel.Result,context: Context) {
+    fun registerUserWithGoogle(methodChannelResult: MethodChannel.Result, context: Context) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient("", "", methodChannelResult, false,context,false,null)
+            val result = createCoroutineClient(methodChannelResult)
+            if (result != null) {
+                AuthenticationImpl.handleRegisterWithGoogle(
+                    result,
+                    context, flow
+                )
+            }
         }
     }
 
@@ -45,47 +61,67 @@ object Authentication {
         email: String,
         password: String,
         newPassword: String?,
-        methodChannelResult: MethodChannel.Result,context: Context
+        methodChannelResult: MethodChannel.Result,
     ) {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         scope.launch {
-            createCoroutineClient(email, password,  methodChannelResult, true,context,false,newPassword)
-        }
-    }
+            val result = createCoroutineClient(methodChannelResult)
+            if (result != null) {
 
-
-    fun logout(methodChannelResult: MethodChannel.Result,context: Context) {
-        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-        scope.launch {
-            createCoroutineClient("","",methodChannelResult,false,context,true , null)
-        }
-    }
-
-    fun fetchTokens(uri: Uri){
-        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-        scope.launch {
-            handleFetchToken(uri)
-        }
-    }
-
-   private suspend fun handleFetchToken(uri: Uri){
-        when(val response =  flow?.resume()){
-            is OidcClientResult.Error ->{
-            OktaOidcFlutterPlugin.methodResult.error("FETCH TOKEN FAILED",response.exception.toString(),response.exception.message)
+                AuthenticationImpl.handleSignInWithCredentials(
+                    result,
+                    email,
+                    password,
+                    newPassword,
+                    methodChannelResult, flow
+                )
             }
-            is OidcClientResult.Success ->{
+        }
+    }
+
+
+    fun logout(methodChannelResult: MethodChannel.Result) {
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        scope.launch {
+            val result = createCoroutineClient(methodChannelResult)
+            if (result != null) {
+                AuthenticationImpl.handleLogout(
+                    result, methodChannelResult, flow
+                )
+            }
+        }
+    }
+
+    fun fetchTokensFromRedirectUri(uri: Uri) {
+        val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+        scope.launch {
+            handleEvaluateRedirectUri(uri)
+        }
+    }
+
+    private suspend fun handleEvaluateRedirectUri(uri: Uri) {
+        when (val response = flow?.resume()) {
+            is OidcClientResult.Error -> {
+                OktaOidcFlutterPlugin.methodResult.error(
+                    "FETCH TOKEN FAILED",
+                    response.exception.toString(),
+                    response.exception.message
+                )
+            }
+            is OidcClientResult.Success -> {
                 println("Fetching token")
                 when (val redirectResult = flow?.evaluateRedirectUri(uri)) {
                     is IdxRedirectResult.Error -> {
-                        println("fetch token failed")
+                        println("Fetch token failed")
 
-                        OktaOidcFlutterPlugin.methodResult.error("FETCH TOKEN FAILED",redirectResult.errorMessage,
+                        OktaOidcFlutterPlugin.methodResult.error(
+                            "FETCH TOKEN FAILED", redirectResult.errorMessage,
                             redirectResult.exception?.message
                         )
                     }
 
                     is IdxRedirectResult.Tokens -> {
-                        println("fetch token success")
+                        println("Fetch token success")
                         CredentialBootstrap.defaultCredential().storeToken(redirectResult.response)
                         val tokenMap = mapOf(
                             "accessToken" to redirectResult.response.accessToken,
@@ -105,14 +141,9 @@ object Authentication {
 
 
     private suspend fun createCoroutineClient(
-        email: String,
-        password: String,
         methodChannelResult: MethodChannel.Result,
-        isSignIn: Boolean,
-        context: Context,
-        isLogoutRequest: Boolean,
-        newPassword:String?
-    ) {
+    ): IdxResponse? {
+        var response: IdxResponse? = null
 
         when (
             val clientResult = CredentialBootstrap.oidcClient.createIdxFlow(
@@ -124,7 +155,7 @@ object Authentication {
                     clientResult.exception.message,
                     clientResult.exception.cause?.message
                 )
-                return
+                return null
             }
 
             is OidcClientResult.Success -> {
@@ -136,40 +167,15 @@ object Authentication {
                             resumeResult.exception.message,
                             resumeResult.exception.cause?.message
                         )
-                        return
+                        return null
                     }
                     is OidcClientResult.Success -> {
-                        if (email.isNotEmpty() && password.isNotEmpty() && !isSignIn) {
-
-                            AuthenticationImpl.handleRegisterWithCredentialsResponse(
-                                resumeResult.result,
-                                email,
-                                password,
-                                methodChannelResult, flow
-                            )
-                        } else if (email.isNotEmpty() && password.isNotEmpty() && isSignIn) {
-
-                            AuthenticationImpl.handleSignInWithCredentials(
-                                resumeResult.result,
-                                email,
-                                password,
-                                newPassword,
-                                methodChannelResult, flow
-                            )
-                        }else if(isLogoutRequest){
-                            AuthenticationImpl.handleLogout(resumeResult.result,methodChannelResult,
-                                flow)
-                        } else {
-                           AuthenticationImpl.handleRegisterWithGoogleResponse(
-                                resumeResult.result,
-                                methodChannelResult,
-                                context, flow
-                            )
-                        }
+                        response = resumeResult.result
                     }
                 }
             }
         }
+        return response
     }
 }
 

@@ -6,16 +6,14 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 
 import com.jiju.thomas.okta_oidc_flutter.idxOperations.Authentication;
-import com.jiju.thomas.okta_oidc_flutter.operations.ConfigOktaClient;
-import com.jiju.thomas.okta_oidc_flutter.operations.Auth;
+import com.jiju.thomas.okta_oidc_flutter.oktaConfigs.ConfigOktaClient;
 import com.jiju.thomas.okta_oidc_flutter.utils.AvailableMethods;
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaRequestParameters;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Objects;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
@@ -31,7 +29,7 @@ import io.flutter.plugin.common.MethodChannel.Result;
 public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
     public MethodChannel channel;
     private Activity mainActivity;
-    public static Context context = null;
+    public Context context = null;
     public static MethodChannel.Result methodResult;
 
     // Flutter Engine overrides
@@ -49,16 +47,13 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
             // Create Okta Config
             case AvailableMethods.CREATE_CONFIG:
                 try {
-                    ArrayList arguments = (ArrayList) call.arguments;
-                    HashMap<String, String> argMap = new HashMap<String, String>(
-                            (Map<String, String>) arguments.get(0));
-                    final String clientId = argMap.get("clientId");
-                    final String redirectUri = argMap.get("redirectUri");
-                    final String endSessionRedirectUri = argMap.get("endSessionRedirectUri");
-                    final String discoveryUri = argMap.get("discoveryUri");
-                    final List<String> scopes = new ArrayList<String>(Arrays.asList(argMap.get("scopes").split(",")));
+                    final String clientId = call.argument("clientId");
+                    final String redirectUri = call.argument("redirectUri");
+                    final String endSessionRedirectUri =  call.argument("endSessionRedirectUri");
+                    final String discoveryUri = call.argument("discoveryUri");
+                    final List<String> scopes = new ArrayList<>(Arrays.asList(Objects.requireNonNull(call.argument("scopes")).toString().split(",")));
                     final Boolean requireHardwareBackedKeyStore = Boolean
-                            .parseBoolean(argMap.get("requireHardwareBackedKeyStore"));
+                            .parseBoolean(call.argument("requireHardwareBackedKeyStore"));
 
                     OktaRequestParameters oktaRequestParameters = new OktaRequestParameters(
                             clientId,
@@ -74,40 +69,23 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 break;
             // Sign in with Credentials
             case AvailableMethods.SIGN_IN_WITH_CREDENTIAL:
-                ArrayList arguments = (ArrayList) call.arguments;
-                HashMap<String, String> argMap = new HashMap<String, String>((Map<String, String>) arguments.get(0));
-                final String email = argMap.get("email");
-                final String password = argMap.get("password");
-                final String newPassword = argMap.get("newPassword");
+                final String email = call.argument("username");
+                final String password = call.argument("password");
+                final String newPassword = call.argument("newPassword");
                 assert password != null;
                 assert email != null;
-                Authentication.INSTANCE.signInWithCredentials(email, password, newPassword,result, context);
+                Authentication.INSTANCE.signInWithCredentials(email, password, newPassword,result);
                 break;
             case AvailableMethods.SIGN_OUT:
-                Authentication.INSTANCE.logout(result,context);
-                break;
-            case AvailableMethods.WEB_SIGN_IN:
-                ArrayList argument = (ArrayList) call.arguments;
-                HashMap<String, String> arg = new HashMap<String, String>((Map<String, String>) argument.get(0));
-                final String idp = arg.get("idp");
-                Auth.signInWithBrowser(idp, mainActivity, result);
-                break;
-            case AvailableMethods.FORGOT_PASSWORD:
-//                ArrayList forgotPasswordArguments = (ArrayList) call.arguments;
-//                HashMap<String, String> forgotPasswordMap = new HashMap<String, String>(
-//                        (Map<String, String>) forgotPasswordArguments.get(0));
-//                final String orgDom = forgotPasswordMap.get("orgDomain");
-//                final String userName = forgotPasswordMap.get("username");
-//                Auth.forgotPassword(orgDom, userName, result);
+                Authentication.INSTANCE.logout(result);
                 break;
             case AvailableMethods.REGISTER_WITH_CREDENTIAL:
-                ArrayList registerUserArguments = (ArrayList) call.arguments;
-                HashMap<String, String> registerUserArgMap = new HashMap<String, String>(
-                        (Map<String, String>) registerUserArguments.get(0));
-                final String registerEmail = registerUserArgMap.get("email");
-                final String registerPassword = registerUserArgMap.get("password");
+                final String registerEmail = call.argument("email");
+                final String registerPassword = call.argument("password");
 
-                Authentication.INSTANCE.registerUserWithCredentials(registerEmail, registerPassword, result, context);
+                assert registerPassword != null;
+                assert registerEmail != null;
+                Authentication.INSTANCE.registerUserWithCredentials(registerEmail, registerPassword, result);
                 break;
             case AvailableMethods.REGISTER_WITH_GOOGLE:
                 Authentication.INSTANCE.registerUserWithGoogle(result, context);

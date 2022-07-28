@@ -1,8 +1,7 @@
-package com.jiju.thomas.okta_oidc_flutter.operations;
+package com.jiju.thomas.okta_oidc_flutter.oktaConfigs;
 
 import android.content.Context;
 
-import com.jiju.thomas.okta_oidc_flutter.idxOperations.CredentialDataSource;
 import com.jiju.thomas.okta_oidc_flutter.utils.Errors;
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaClient;
 import com.jiju.thomas.okta_oidc_flutter.utils.OktaRequestParameters;

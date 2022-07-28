@@ -1,4 +1,4 @@
-package com.jiju.thomas.okta_oidc_flutter.idxOperations
+package com.jiju.thomas.okta_oidc_flutter.oktaConfigs
 
 import android.content.Context
 import com.okta.authfoundation.client.OidcClient

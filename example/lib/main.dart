@@ -43,8 +43,8 @@ class _MyAppState extends State<MyApp> {
               onPressed: () async {
                 OktaResponse oktaResposne =
                     await OktaOidcFlutter.instance.signInWithCredentials(
-                  email: 'jijujoel@tifin.com',
-                  password: '7A9+qkL+',
+                  email: 'ood10@apex.com',
+                  password: 'Magnifi@123',
                 );
                 if (oktaResposne.reEnroll) {
                   showDialog(
@@ -117,7 +117,7 @@ class _MyAppState extends State<MyApp> {
               onPressed: () async {
                 OktaResponse token =
                     await OktaOidcFlutter.instance.registerWithCreds(
-                  'jijujoel15@tifin.com',
+                  'Test21011@tifin.com',
                   'Test100@',
                 );
                 print(token.accessToken);
