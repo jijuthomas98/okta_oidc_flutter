@@ -43,14 +43,11 @@ class OktaOidcFlutter {
     return OktaResponse.parse(tokens);
   }
 
-  Future<OktaResponse?> sso({
+  Future<OktaResponse> sso({
     required String idp,
   }) async {
     if (isInitialized == false) {
       throw Exception("Cannot sign in before initializing Okta SDK");
-    }
-    if (Platform.isAndroid) {
-      return null;
     }
 
     // ignore: prefer_typing_uninitialized_variables
@@ -91,19 +88,6 @@ class OktaOidcFlutter {
       "email": email,
       "password": password,
     });
-
-    return OktaResponse.parse(tokens);
-  }
-
-  Future<OktaResponse> registerWithGoogle() async {
-    if (isInitialized == false) {
-      throw Exception("Cannot sign in before initializing Okta SDK");
-    }
-    // ignore: prefer_typing_uninitialized_variables
-    var tokens;
-    if (Platform.isAndroid) {
-      tokens = await _channel.invokeMethod("REGISTER_WITH_GOOGLE");
-    }
 
     return OktaResponse.parse(tokens);
   }

@@ -20,8 +20,8 @@ class _MyAppState extends State<MyApp> {
 
     OktaOidcFlutter.instance.initOkta(
       InitOkta(
-        clientId: '0oa1k4uyv06twnAW8697',
-        issuer: 'https://magnifi-dev.okta.com/oauth2/default',
+        clientId: '0oa1m1yl1txz8Zyyn697',
+        issuer: 'https://magnifi.okta.com/oauth2/default',
         endSessionRedirectUri: 'com.magnifi.app.staging:/app',
         redirectUrl: 'com.magnifi.app.staging:/app',
         scopes: ['openid', 'profile', 'email', 'offline_access'],
@@ -43,8 +43,8 @@ class _MyAppState extends State<MyApp> {
               onPressed: () async {
                 OktaResponse oktaResposne =
                     await OktaOidcFlutter.instance.signInWithCredentials(
-                  email: 'ood10@apex.com',
-                  password: 'Magnifi@123',
+                  email: 're@re.com',
+                  password: '8@Dc=Pn6',
                 );
                 if (oktaResposne.reEnroll) {
                   showDialog(
@@ -63,9 +63,9 @@ class _MyAppState extends State<MyApp> {
                                     OktaResponse oktaResposne =
                                         await OktaOidcFlutter.instance
                                             .signInWithCredentials(
-                                      email: 'jijujoel@tifin.com',
-                                      password: '7A9+qkL+',
-                                      newPassword: 'JTDFA9+q123L+@',
+                                      email: 're@re.com',
+                                      password: '8@Dc=Pn',
+                                      newPassword: 'Magnifi@sai1',
                                     );
 
                                     print(oktaResposne.accessToken);
@@ -109,7 +109,7 @@ class _MyAppState extends State<MyApp> {
             ),
             TextButton(
               onPressed: () async {
-                await OktaOidcFlutter.instance.registerWithGoogle();
+                await OktaOidcFlutter.instance.sso(idp: "0oa1k4ywmmhmfXmOT697");
               },
               child: const Text('Register with google'),
             ),

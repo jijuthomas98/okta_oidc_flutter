@@ -87,7 +87,7 @@ public class OktaOidcFlutterPlugin implements FlutterPlugin, MethodCallHandler, 
                 assert registerEmail != null;
                 Authentication.INSTANCE.registerUserWithCredentials(registerEmail, registerPassword, result);
                 break;
-            case AvailableMethods.REGISTER_WITH_GOOGLE:
+            case AvailableMethods.WEB_SIGN_IN:
                 Authentication.INSTANCE.registerUserWithGoogle(result, context);
                 break;
             default:
